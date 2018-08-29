@@ -1,11 +1,15 @@
 apply plugin: 'java'
 apply plugin: 'com.moowork.node'
 
+project.ext {
+    defaultNodeVer = '10.8.0'
+}
+
 node {
-    version = "10.8.0"
+    version = rootProject.hasProperty('nodeVer') ? rootProject.nodeVer : project.defaultNodeVer
     download = true
+    workDir = file("$rootProject.projectDir/nodejs")
     nodeModulesDir = file(project.projectDir)
-    workDir = file("$project.buildDir/nodejs")
 }
 
 task npmBuildDev(type: NpmTask, dependsOn:npmInstall) {
@@ -26,10 +30,55 @@ task npmBuild(type:NpmTask, dependsOn:npmInstall) {
     args = ['run','build']
 }
 
+task npmPack(type:NpmTask, dependsOn:npmBuild) {
+    group = 'pack'
+    description = "Pack NPM package"
+    args = ['pack']
+}
+
 task npmTest(type: NpmTask, dependsOn: npmBuild) {
+    onlyIf {
+        !npmBuild.state.upToDate
+    }
+
     group = 'test'
     description = "Run NPM tests"
     args = ['run','test']
+}
+
+def createScript(String path, String text) {
+    def file = project.file(path)
+    file.text = text
+    file.setExecutable(true, true)
+}
+
+task createWrapperScripts(type: DefaultTask, dependsOn: nodeSetup) {
+    outputs.files('npm', 'ng', 'npm.cmd', 'npm')
+    doLast {
+        def nodeDir = node.variant.nodeDir
+        def relativePath = project.projectDir.toPath().relativize(nodeDir.toPath())
+        def canonicRelativePath = relativePath.toString().replace('\\', '/')
+
+        createScript('npm',
+"""#!/bin/sh
+basedir=\$(dirname "\$(echo "\$0" | sed -e 's,\\\\,/,g')")
+\$basedir/$canonicRelativePath/node "\$baseDir/$canonicRelativePath/node_module/npm/bin/npm-cli.js" \$*
+""")
+        createScript('npm.cmd',
+"""@%~dp0$relativePath\\node "%~dp0$relativePath\\node_modules\\npm\\bin\\npm-cli.js" %*
+""")
+
+        createScript('ng',
+"""#!/bin/sh
+basedir=\$(dirname "\$(echo "\$0" | sed -e 's,\\\\,/,g')")
+\$basedir/$canonicRelativePath/node "\$basedir/node_modules/@angular/cli/bin/ng" \$*
+""")
+
+        createScript('ng.cmd',
+"""@%~dp0$relativePath\\node "%~dp0\\node_modules\\@angular\\cli\\bin\\ng" %*
+""")
+
+    }
 }
 
 if (!System.getenv('JITPACK')) {
@@ -38,5 +87,9 @@ if (!System.getenv('JITPACK')) {
 }
 
 clean.doLast {
-    file("$projectDir/node_modules").deleteDir()
+    file("$node.nodeModulesDir/node_modules").deleteDir()
+    file("$projectDir/npm").delete()
+    file("$projectDir/npm.cmd").delete()
+    file("$projectDir/ng").delete()
+    file("$projectDir/ng.cmd").delete()
 }
