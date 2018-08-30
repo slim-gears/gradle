@@ -60,3 +60,5 @@ project.afterEvaluate {
         project.addPublication(it)
     }
 }
+
+task install(type: DefaultTask, dependsOn: publishToMavenLocal)
