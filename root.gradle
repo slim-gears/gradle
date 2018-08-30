@@ -1,5 +1,9 @@
 import groovy.text.SimpleTemplateEngine
 
+project.ext {
+    sourceCompatibility = 1.8
+}
+
 static def loadProperties(Project prj, File file) {
     def props = new Properties()
     file.withInputStream {
