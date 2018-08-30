@@ -1,0 +1,33 @@
+import groovy.text.SimpleTemplateEngine
+
+static def loadProperties(Project prj, File file) {
+    def props = new Properties()
+    file.withInputStream {
+        props.load(it)
+    }
+
+    def evaluator = new SimpleTemplateEngine()
+    Map bindings = new HashMap(props)
+    def name = file.name.take(file.name.lastIndexOf('.')) as String
+    prj.ext[name] = props.collectEntries { key, value ->
+        def evaluated = evaluator.createTemplate(value.toString()).make(bindings).toString()
+        [(key): evaluated]
+    }
+}
+
+allprojects { Project prj ->
+    group rootProject.group
+    version rootProject.version
+
+    prj.projectDir
+            .listFiles ({ dir, name -> name ==~ /.*\.properties/ } as FilenameFilter)
+            .each { loadProperties(prj, it) }
+}
+
+subprojects {
+    repositories {
+        mavenCentral()
+        mavenLocal()
+        maven { url 'https://jitpack.io' }
+    }
+}
