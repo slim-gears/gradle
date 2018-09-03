@@ -31,7 +31,7 @@ allprojects { Project prj ->
 subprojects {
     repositories {
         mavenCentral()
-        //mavenLocal()
+        mavenLocal()
         maven { url 'https://jitpack.io' }
     }
 }
