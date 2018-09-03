@@ -1,3 +1,6 @@
+import org.gradle.api.internal.artifacts.dependencies.AbstractDependency
+import org.gradle.api.internal.artifacts.dependencies.SelfResolvingDependencyInternal
+
 apply plugin: 'java'
 apply plugin: 'maven-publish'
 
@@ -5,6 +8,10 @@ publishing {
     repositories {
         mavenLocal()
     }
+}
+
+ext.getArtifactId = { SourceSet sourceSet ->
+    sourceSet.name == 'main' ? project.name : "$project.name-$sourceSet.name"
 }
 
 ext.addPublication = { String sourceSetName ->
@@ -26,7 +33,7 @@ ext.addPublication = { String sourceSetName ->
 
     project.publishing.publications.create("${sourceSetName}Maven", MavenPublication) {
         groupId = project.group
-        artifactId = sourceSetName == 'main' ? project.name : "$project.name-$sourceSetName"
+        artifactId = project.getArtifactId(sourceSet)
         artifact sourcesJarTask
         if (sourceSetName != 'main') {
             artifact javaDocJarTask
@@ -34,7 +41,8 @@ ext.addPublication = { String sourceSetName ->
         artifact jarTask
         pom.withXml {
             def depsNode = asNode().appendNode('dependencies')
-            configurations.getByName(sourceSet.implementationConfigurationName).allDependencies
+            def dependencies = configurations.getByName(sourceSet.implementationConfigurationName).allDependencies
+            dependencies
                     .findAll { it.group != null && it.name != null }
                     .forEach {
                 def depNode = depsNode.appendNode('dependency')
@@ -42,7 +50,7 @@ ext.addPublication = { String sourceSetName ->
                 depNode.appendNode('artifactId', it.name)
                 depNode.appendNode('version', it.version)
 
-                if (!it.excludeRules.isEmpty()) {
+                if (it.hasProperty('excludeRules') && !it.excludeRules.isEmpty()) {
                     def exclusionsNode = depNode.appendNode('exclusions')
                     it.excludeRules.each { rule ->
                         def exclusionNode = exclusionsNode.appendNode('exclusion')
@@ -54,6 +62,77 @@ ext.addPublication = { String sourceSetName ->
         }
     }
 }
+
+class SourceSetDependency extends AbstractDependency implements FileCollectionDependency, SelfResolvingDependencyInternal {
+    private final Project project
+    private final SourceSet sourceSet
+
+    SourceSetDependency(Project project, SourceSet sourceSet) {
+        this.project = project
+        this.sourceSet = sourceSet
+    }
+
+    @Override
+    FileCollection getFiles() {
+        return sourceSet.output
+    }
+
+    @Override
+    Set<File> resolve() {
+        return sourceSet.output.files
+    }
+
+    @Override
+    Set<File> resolve(boolean transitive) {
+        return sourceSet.output.files
+    }
+
+    @Override
+    TaskDependency getBuildDependencies() {
+        return sourceSet.output
+    }
+
+    @Override
+    String getGroup() {
+        return project.group
+    }
+
+    @Override
+    String getName() {
+        return project.getArtifactId(sourceSet)
+    }
+
+    @Override
+    String getVersion() {
+        return project.version
+    }
+
+    @Override
+    boolean contentEquals(Dependency dependency) {
+        if (!(dependency instanceof SourceSetDependency)) {
+            return false
+        }
+
+        SourceSetDependency sourceSetDep = (SourceSetDependency)dependency
+        return this.project == sourceSetDep.project && this.sourceSet == sourceSetDep.sourceSet
+    }
+
+    @Override
+    Dependency copy() {
+        return new SourceSetDependency(project, sourceSet)
+    }
+
+    @Override
+    ComponentIdentifier getTargetComponentId() {
+        return null
+    }
+}
+
+def sourceSetDependency(SourceSet sourceSet) {
+    return new SourceSetDependency(project, sourceSet)
+}
+
+project.ext.sourceSetDependency = this.&sourceSetDependency
 
 project.afterEvaluate {
     sourceSets.findAll { it.name != 'test' && it.name != 'generated' }.collect { it.name }.each {
