@@ -7,3 +7,16 @@ dependencies {
     testImplementation libs.junit
     testImplementation libs.mockito
 }
+
+configurations {
+    bundledImplementation
+}
+
+project.afterEvaluate {
+    configurations.implementation.extendsFrom(configurations.bundledImplementation)
+    project.jar {
+        from {
+            configurations.bundledImplementation.collect { it.isDirectory() ? it : zipTree(it) }
+        }
+    }
+}
