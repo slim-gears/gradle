@@ -36,9 +36,11 @@ ext.addPublication = { String sourceSetName ->
         artifactId = project.getArtifactId(sourceSet)
         artifact sourcesJarTask
         if (sourceSetName != 'main') {
+            artifact jarTask
+        } else {
             artifact javaDocJarTask
+            artifact jar
         }
-        artifact jarTask
         pom.withXml {
             def depsNode = asNode().appendNode('dependencies')
             def dependencies = configurations.getByName(sourceSet.implementationConfigurationName).allDependencies
