@@ -10,10 +10,24 @@ dependencies {
 
 configurations {
     bundledImplementation
+    implementation.extendsFrom(bundledImplementation)
+    testImplementation.extendsFrom(bundledImplementation)
 }
 
 project.afterEvaluate {
-    configurations.implementation.extendsFrom(configurations.bundledImplementation)
+
+    configurations.each { configuration ->
+        ProjectDependency[] prjDeps = configuration.dependencies
+                .findAll { it instanceof ProjectDependency }
+                .collect { it as ProjectDependency }
+                .findAll { it.targetConfiguration == null }
+        prjDeps.each { dep ->
+            project.dependencies {
+                it.add(configuration.name, it.project(path: dep.dependencyProject.path, configuration: 'bundledImplementation'))
+            }
+        }
+    }
+
     project.jar {
         from {
             configurations.bundledImplementation.collect { it.isDirectory() ? it : zipTree(it) }
