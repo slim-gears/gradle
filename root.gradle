@@ -2,21 +2,34 @@ import groovy.text.SimpleTemplateEngine
 
 project.ext {
     sourceCompatibility = 1.8
+    props = [:]
 }
 
 static def loadProperties(Project prj, File file) {
     def props = new Properties()
-    file.withInputStream {
-        props.load(it)
-    }
+    file.withInputStream { props.load(it) }
 
     def evaluator = new SimpleTemplateEngine()
     Map bindings = new HashMap(props)
+    bindings.projectName = prj.name
     def name = file.name.take(file.name.lastIndexOf('.')) as String
-    prj.ext[name] = props.collectEntries { key, value ->
-        def evaluated = evaluator.createTemplate(value.toString()).make(bindings).toString()
-        [(key): evaluated]
+    def needsEvaluation = true
+    while (needsEvaluation) {
+        def evaluatedCount = 0
+        new HashMap(bindings)
+                .findAll { (it.value as String).contains('$') }
+                .forEach { key, value ->
+            def template = evaluator.createTemplate(value.toString())
+            def evaluated = template.make(bindings).toString()
+            if (evaluated != value) {
+                evaluatedCount++
+                bindings[key] = evaluated
+            }
+        }
+        needsEvaluation = evaluatedCount > 0
     }
+    prj.ext[name] = bindings
+    prj.ext.props[name] = prj.ext[name]
 }
 
 allprojects { Project prj ->
@@ -30,7 +43,7 @@ allprojects { Project prj ->
 
 subprojects {
     repositories {
-        mavenCentral()
+        jcenter()
         mavenLocal()
         maven { url 'https://jitpack.io' }
     }
