@@ -15,9 +15,9 @@ if (project.bintrayUser != null && project.bintrayKey != null && project.hasProp
 
             def config = project.props.bintray
 
-            dryRun = Boolean.valueOf(config.dryRun as String) //Whether to run this as dry-run, without deploying
-            publish = !project.version.toString().contains('SNAPSHOT')
-            override = true
+            it.dryRun = Boolean.valueOf(config.dryRun as String) //Whether to run this as dry-run, without deploying
+            it.publish = !project.version.toString().contains('SNAPSHOT')
+            it.override = true
 
             project.publishing.publications.each { publication ->
                 project.bintray.pkg {
