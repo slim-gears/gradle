@@ -1,5 +1,9 @@
 import groovy.text.SimpleTemplateEngine
 
+if (System.getenv('TRAVIS_TAG') != null) {
+    project.version System.getenv('TRAVIS_TAG')
+}
+
 project.ext {
     sourceCompatibility = 1.8
     props = [:]
@@ -30,6 +34,14 @@ static def loadProperties(Project prj, File file) {
     }
     prj.ext[name] = bindings
     prj.ext.props[name] = prj.ext[name]
+}
+
+rootProject.ext.applyScripts = { Collection<String> scripts, Collection<String> projects ->
+    scripts.each { script ->
+        projects
+                .collect {rootProject.project(it)}
+                .each { prj -> prj.apply(from: script) }
+    }
 }
 
 allprojects { Project prj ->

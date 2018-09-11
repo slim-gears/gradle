@@ -9,48 +9,51 @@ if (project.bintrayUser != null && project.bintrayKey != null && project.hasProp
 
     apply plugin: 'com.jfrog.bintray.multipackage'
     project.afterEvaluate {
-        project.bintray {
-            user = project.bintrayUser
-            key = project.bintrayKey
+        if (project.hasProperty('publising') && project.publishing.hasProperty('publications')) {
+            project.bintray {
+                user = project.bintrayUser
+                key = project.bintrayKey
 
-            def config = project.props.bintray
+                def config = project.props.bintray
 
-            it.dryRun = Boolean.valueOf(config.dryRun as String) //Whether to run this as dry-run, without deploying
-            it.publish = !project.version.toString().contains('SNAPSHOT')
-            it.override = true
+                it.dryRun = Boolean.valueOf(config.dryRun as String) //Whether to run this as dry-run, without deploying
+                it.publish = !project.version.toString().contains('SNAPSHOT')
+                it.override = true
 
-            project.publishing.publications.each { publication ->
-                project.bintray.pkg {
-                    repo = config.repository ?: project.rootProject.name
-                    name = publication.artifactId
-                    publications = [publication.name]
-                    //name = project.rootProject.name
-                    userOrg = config.organization
-                    githubRepo = config.githubRepo
-                    //An optional organization name when the repo belongs to one of the user's orgs
-                    websiteUrl = config.websiteUrl
-                    issueTrackerUrl = config.issueTrackerUrl
-                    vcsUrl = config.vcsUrl
-                    licenses = ofNullable(config.licenses).map({ it.tokenize(',').collect { it.trim() } }).orElse([])
-                    publicDownloadNumbers = true
-                    desc = config.description
-                    labels = ofNullable(config.labels).map({ it.tokenize(',').collect { it.trim() } }).orElse([])
-                    version {
-                        name = project.version //Bintray logical version name
-                        released = new Date()
-                        vcsTag = System.getenv('TRAVIS_TAG')
-                        if (config.sonatypeUser && config.sonatypePassword) {
-                            mavenCentralSync {
-                                sync = true
-                                //Optional (true by default). Determines whether to sync the version to Maven Central.
-                                user = config.sonatypeUser //OSS user token
-                                password = config.sonatypePassword //OSS user password
-                                close = '1'
-                                //Optional property. By default the staging repository is closed and artifacts are released to Maven Central. You can optionally turn this behaviour off (by puting 0 as value) and release the version manually.
+                project.publishing.publications.each { publication ->
+                    project.bintray.pkg {
+                        repo = config.repository ?: project.rootProject.name
+                        name = publication.artifactId
+                        publications = [publication.name]
+                        //name = project.rootProject.name
+                        userOrg = config.organization
+                        githubRepo = config.githubRepo
+                        //An optional organization name when the repo belongs to one of the user's orgs
+                        websiteUrl = config.websiteUrl
+                        issueTrackerUrl = config.issueTrackerUrl
+                        vcsUrl = config.vcsUrl
+                        licenses = ofNullable(config.licenses).map({ it.tokenize(',').collect { it.trim() } }).orElse([])
+                        publicDownloadNumbers = true
+                        desc = config.description
+                        labels = ofNullable(config.labels).map({ it.tokenize(',').collect { it.trim() } }).orElse([])
+                        version {
+                            name = project.version //Bintray logical version name
+                            released = new Date()
+                            vcsTag = System.getenv('TRAVIS_TAG')
+                            if (config.sonatypeUser && config.sonatypePassword) {
+                                mavenCentralSync {
+                                    sync = true
+                                    //Optional (true by default). Determines whether to sync the version to Maven Central.
+                                    user = config.sonatypeUser //OSS user token
+                                    password = config.sonatypePassword //OSS user password
+                                    close = '1'
+                                    //Optional property. By default the staging repository is closed and artifacts are released to Maven Central. You can optionally turn this behaviour off (by puting 0 as value) and release the version manually.
+                                }
                             }
                         }
                     }
                 }
+
             }
         }
     }
