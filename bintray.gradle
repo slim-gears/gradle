@@ -1,5 +1,7 @@
 import static java.util.Optional.*
 
+apply from: "$buildscript.sourceFile.parent/maven-publish.gradle"
+
 ext {
     bintrayUser = System.getenv('BINTRAY_USER')
     bintrayKey = System.getenv('BINTRAY_KEY')
