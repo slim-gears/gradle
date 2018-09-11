@@ -1,5 +1,7 @@
 import groovy.text.SimpleTemplateEngine
 
+apply plugin: 'com.gradle.build-scan'
+
 if (System.getenv('TRAVIS_TAG') != null) {
     project.version System.getenv('TRAVIS_TAG')
 }
