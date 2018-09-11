@@ -11,7 +11,7 @@ if (project.bintrayUser != null && project.bintrayKey != null && project.hasProp
 
     apply plugin: 'com.jfrog.bintray.multipackage'
     project.afterEvaluate {
-        if (project.hasProperty('publising') && project.publishing.hasProperty('publications')) {
+        if (project.hasProperty('publishing') && project.publishing.hasProperty('publications')) {
             project.bintray {
                 user = project.bintrayUser
                 key = project.bintrayKey
@@ -55,7 +55,6 @@ if (project.bintrayUser != null && project.bintrayKey != null && project.hasProp
                         }
                     }
                 }
-
             }
         }
     }
