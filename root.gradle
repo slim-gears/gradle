@@ -2,9 +2,12 @@ import groovy.text.SimpleTemplateEngine
 
 apply plugin: 'com.gradle.build-scan'
 
-if (System.getenv('TRAVIS_TAG') != null) {
-    project.version System.getenv('TRAVIS_TAG')
+if (!rootProject.hasProperty('scriptsDir')) {
+    rootProject.ext.scriptsDir = buildscript.sourceFile.parent
 }
+
+project.group projectGroup
+project.version = System.getenv('TRAVIS_TAG') ?: projectVersion
 
 project.ext {
     sourceCompatibility = 1.8
