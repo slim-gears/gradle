@@ -11,11 +11,13 @@ dependencies {
 
 configurations {
     bundledImplementation
-    implementation.extendsFrom(bundledImplementation)
-    testImplementation.extendsFrom(bundledImplementation)
 }
 
 project.afterEvaluate {
+    configurations {
+        implementation.extendsFrom(bundledImplementation)
+        testImplementation.extendsFrom(bundledImplementation)
+    }
 
     configurations.each { configuration ->
         ProjectDependency[] prjDeps = configuration.dependencies
