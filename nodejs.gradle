@@ -83,7 +83,7 @@ basedir=\$(dirname "\$(echo "\$0" | sed -e 's,\\\\,/,g')")
 
 if (!System.getenv('JITPACK')) {
     jar.dependsOn(npmBuild)
-    if (project.skipTests ?: false) {
+    if (!project.hasProperty('skipTests') || !project.skipTests) {
         test.dependsOn(npmTest)
     }
 }
