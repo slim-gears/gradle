@@ -15,6 +15,7 @@ ext.getArtifactId = { SourceSet sourceSet ->
 }
 
 ext.addPublication = { String sourceSetName ->
+
     def sourceSet = sourceSets.getByName(sourceSetName)
 
     def sourcesJarTask = project.tasks.create(name: "${sourceSetName}SourcesJar", type: Jar) {
