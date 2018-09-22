@@ -35,16 +35,11 @@ ext.addPublication = { SourceSet sourceSet  ->
         groupId = project.group
         artifactId = project.getArtifactId(sourceSet)
         artifact sourcesJarTask
-        if (project.components.hasProperty('java')) {
-            artifact sourcesJarTask
-            if (sourceSetName != 'main') {
-                artifact jarTask
-            } else {
-                artifact javaDocJarTask
-                artifact jar
-            }
-        } else if (project.components.hasProperty('com.android.library')) {
-            artifact "$project.buildDir/outputs/aar/$project.name-release.aar"
+        if (sourceSetName != 'main') {
+            artifact jarTask
+        } else {
+            artifact javaDocJarTask
+            artifact jar
         }
         pom.withXml {
             def depsNode = asNode().appendNode('dependencies')
