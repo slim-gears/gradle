@@ -9,19 +9,21 @@ if (!rootProject.hasProperty('scriptsDir')) {
 project.group projectGroup
 project.version = System.getenv('TRAVIS_TAG') ?: projectVersion
 
-project.ext {
-    sourceCompatibility = 1.8
-    props = [:]
-}
+project.ext.sourceCompatibility = 1.8
 
 static def loadProperties(Project prj, File file) {
+    if (!prj.hasProperty('props')) {
+        prj.ext.props = [:]
+        if (prj != prj.rootProject) {
+            prj.ext.props << prj.rootProject.props
+        }
+    }
     def props = new Properties()
     file.withInputStream { props.load(it) }
-
     def evaluator = new SimpleTemplateEngine()
     Map bindings = new HashMap(props)
-    bindings.projectName = prj.name
     def name = file.name.take(file.name.lastIndexOf('.')) as String
+    bindings.projectName = prj.name
     def needsEvaluation = true
     while (needsEvaluation) {
         def evaluatedCount = 0
@@ -38,7 +40,7 @@ static def loadProperties(Project prj, File file) {
         needsEvaluation = evaluatedCount > 0
     }
     prj.ext[name] = bindings
-    prj.ext.props[name] = prj.ext[name]
+    prj.props[name] = bindings
 }
 
 rootProject.ext.applyScripts = { Collection<String> scripts, Collection<String> projects ->

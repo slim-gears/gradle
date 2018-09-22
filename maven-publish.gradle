@@ -1,7 +1,6 @@
 import org.gradle.api.internal.artifacts.dependencies.AbstractDependency
 import org.gradle.api.internal.artifacts.dependencies.SelfResolvingDependencyInternal
 
-apply plugin: 'java'
 apply plugin: 'maven-publish'
 
 publishing {
@@ -14,9 +13,9 @@ ext.getArtifactId = { SourceSet sourceSet ->
     sourceSet.name == 'main' ? project.name : "$project.name-$sourceSet.name"
 }
 
-ext.addPublication = { String sourceSetName ->
+ext.addPublication = { SourceSet sourceSet  ->
 
-    def sourceSet = sourceSets.getByName(sourceSetName)
+    def sourceSetName = sourceSet.name
 
     def sourcesJarTask = project.tasks.create(name: "${sourceSetName}SourcesJar", type: Jar) {
         from sourceSet.allSource
@@ -36,11 +35,16 @@ ext.addPublication = { String sourceSetName ->
         groupId = project.group
         artifactId = project.getArtifactId(sourceSet)
         artifact sourcesJarTask
-        if (sourceSetName != 'main') {
-            artifact jarTask
-        } else {
-            artifact javaDocJarTask
-            artifact jar
+        if (project.components.hasProperty('java')) {
+            artifact sourcesJarTask
+            if (sourceSetName != 'main') {
+                artifact jarTask
+            } else {
+                artifact javaDocJarTask
+                artifact jar
+            }
+        } else if (project.components.hasProperty('com.android.library')) {
+            artifact "$project.buildDir/outputs/aar/$project.name-release.aar"
         }
         pom.withXml {
             def depsNode = asNode().appendNode('dependencies')
@@ -137,9 +141,15 @@ def sourceSetDependency(SourceSet sourceSet) {
 
 project.ext.sourceSetDependency = this.&sourceSetDependency
 
-project.afterEvaluate {
-    sourceSets.findAll { it.name != 'test' && it.name != 'generated' }.collect { it.name }.each {
+project.ext.publishSourceSets = { sourceSets ->
+    sourceSets.findAll { it.name != 'test' && it.name != 'generated' }.each {
         project.addPublication(it)
+    }
+}
+
+project.afterEvaluate {
+    if (project.hasProperty('sourceSets')) {
+        project.publishSourceSets(project.sourceSets)
     }
 }
 

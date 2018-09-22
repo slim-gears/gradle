@@ -36,4 +36,10 @@ project.afterEvaluate {
             configurations.bundledImplementation.collect { it.isDirectory() ? it : zipTree(it) }
         }
     }
+
+    project.test {
+        afterTest { descriptor, result ->
+            println "Test ${result.resultType} - ${descriptor.name}"
+        }
+    }
 }

@@ -1,0 +1,31 @@
+def sdkDir = "$rootProject.projectDir/.sdk"
+
+static def loadLicenses(String filePath) {
+    def licensesFile = new File(filePath)
+    licensesFile.exists() ? licensesFile.readLines().toSet() : new HashSet()
+}
+
+static def saveLicenses(String filePath, Set<String> licenses) {
+    def licensesFile = new File(filePath)
+    licensesFile.parentFile.mkdirs()
+    licensesFile.withPrintWriter { printer ->
+        licenses.each { printer.println(it) }
+    }
+}
+
+def props = new Properties()
+props.setProperty("sdk.dir", sdkDir)
+rootProject.file('local.properties').withOutputStream {
+    props.store(it, null)
+}
+
+rootProject.file(sdkDir).mkdirs()
+
+def sdkLicensePath = "$sdkDir/licenses/android-sdk-license"
+def sdkLicenseSet = loadLicenses(sdkLicensePath)
+def localLicenseSet = loadLicenses("$buildscript.sourceFile.parent/android-sdk.license")
+if (!sdkLicenseSet.containsAll(localLicenseSet)) {
+    def missingLicenses = localLicenseSet - sdkLicenseSet
+    print "${missingLicenses.size()} licenses are missing"
+    saveLicenses(sdkLicensePath, sdkLicenseSet + localLicenseSet)
+}
