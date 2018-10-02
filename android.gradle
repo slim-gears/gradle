@@ -4,8 +4,8 @@ project.android {
         minSdkVersion 15
         targetSdkVersion 27
         versionCode 1
-        versionName "1.0"
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        versionName project.version.toString()
+        //testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
         release {
@@ -17,9 +17,14 @@ project.android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
-    testOptions.unitTests.all {
-        afterTest { descriptor, result ->
-            println "Test ${result.resultType} - ${descriptor.name}"
+    testOptions {
+        unitTests {
+            returnDefaultValues = true
+            all {
+                afterTest { descriptor, result ->
+                    println "Test ${result.resultType} - ${descriptor.name}"
+                }
+            }
         }
     }
 }
