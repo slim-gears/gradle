@@ -1,5 +1,6 @@
 apply plugin: 'idea'
 apply plugin: 'java'
+apply plugin: 'com.adarshr.test-logger'
 
 sourceCompatibility = rootProject.sourceCompatibility
 
@@ -49,12 +50,6 @@ project.afterEvaluate {
     project.jar {
         from {
             configurations.bundledImplementation.collect { it.isDirectory() ? it : zipTree(it) }
-        }
-    }
-
-    project.test {
-        afterTest { descriptor, result ->
-            println "Test ${result.resultType} - ${descriptor.name}"
         }
     }
 }

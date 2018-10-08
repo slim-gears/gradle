@@ -1,3 +1,6 @@
+apply plugin: 'idea'
+apply plugin: 'com.adarshr.test-logger'
+
 project.android {
     compileSdkVersion 28
     defaultConfig {
@@ -20,11 +23,6 @@ project.android {
     testOptions {
         unitTests {
             returnDefaultValues = true
-            all {
-                afterTest { descriptor, result ->
-                    println "Test ${result.resultType} - ${descriptor.name}"
-                }
-            }
         }
     }
 }
