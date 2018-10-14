@@ -1,0 +1,7 @@
+apply plugin: 'com.android.library'
+apply from: "$buildscript.sourceFile.parent/android.gradle"
+
+task sourceJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    classifier "sources"
+}

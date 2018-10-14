@@ -1,6 +1,6 @@
 apply plugin: 'idea'
 apply plugin: 'java'
-apply plugin: 'net.ltgt.apt-idea'
+apply plugin: 'com.adarshr.test-logger'
 
 sourceCompatibility = rootProject.sourceCompatibility
 
@@ -20,15 +20,31 @@ project.afterEvaluate {
     }
 
     configurations.each { configuration ->
-        ProjectDependency[] prjDeps = configuration.dependencies
+        def prjDeps = configuration.dependencies
                 .findAll { it instanceof ProjectDependency }
                 .collect { it as ProjectDependency }
-                .findAll { it.targetConfiguration == null }
-        prjDeps.each { dep ->
-            project.dependencies {
-                it.add(configuration.name, it.project(path: dep.dependencyProject.path, configuration: 'bundledImplementation'))
-            }
-        }
+
+        def thisPrj = project
+        prjDeps
+                .each { dep ->
+                    def depConfig = {
+                        if (dep.targetConfiguration == null) {
+                            thisPrj.dependencies {
+                                it.add(configuration.name, it.project(path: dep.dependencyProject.path, configuration: 'bundledImplementation'))
+                            }
+                        } else {
+                            thisPrj.dependencies {
+                                it.add(configuration.name, thisPrj.files(dep.dependencyProject.configurations[dep.targetConfiguration].artifacts.files))
+                            }
+                        }
+                    }
+
+                    if (dep.targetConfiguration == null || dep.dependencyProject.configurations.findByName(dep.targetConfiguration) != null) {
+                        depConfig.call()
+                    } else {
+                        dep.dependencyProject.afterEvaluate depConfig
+                    }
+                }
     }
 
     project.jar {

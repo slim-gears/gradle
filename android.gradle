@@ -1,0 +1,38 @@
+apply plugin: 'idea'
+apply plugin: 'com.adarshr.test-logger'
+
+project.android {
+    compileSdkVersion 28
+    defaultConfig {
+        minSdkVersion 15
+        targetSdkVersion 28
+        versionCode 1
+        versionName project.version.toString()
+        //testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    testOptions {
+        unitTests {
+            returnDefaultValues = true
+        }
+    }
+}
+
+repositories {
+    google()
+}
+
+dependencies {
+    testImplementation libs.robolectric
+    testImplementation libs.mockito
+    testImplementation libs.junit
+}

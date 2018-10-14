@@ -1,6 +1,10 @@
 import static java.util.Optional.*
 
-apply from: "$buildscript.sourceFile.parent/maven-publish.gradle"
+if (project.hasProperty('android')) {
+    apply from: "$buildscript.sourceFile.parent/android-maven-publish.gradle"
+} else {
+    apply from: "$buildscript.sourceFile.parent/maven-publish.gradle"
+}
 
 ext {
     bintrayUser = System.getenv('BINTRAY_USER')
@@ -8,7 +12,6 @@ ext {
 }
 
 if (project.bintrayUser != null && project.bintrayKey != null && project.hasProperty('bintray')) {
-
     apply plugin: 'com.jfrog.bintray.multipackage'
     project.afterEvaluate {
         if (project.hasProperty('publishing') && project.publishing.hasProperty('publications')) {
