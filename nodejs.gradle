@@ -88,8 +88,13 @@ if (!System.getenv('JITPACK')) {
     }
 }
 
+project.afterEvaluate {
+    npmInstall.outputs.file("$node.nodeModulesDir/node_modules")
+    npmInstall.inputs.file("$node.nodeModulesDir/package.json")
+}
+
 clean.doLast {
-    file("$node.nodeModulesDir/node_modules").deleteDir()
+    //file("$node.nodeModulesDir/node_modules").deleteDir()
     file("$projectDir/npm").delete()
     file("$projectDir/npm.cmd").delete()
     file("$projectDir/ng").delete()
