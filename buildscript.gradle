@@ -7,7 +7,7 @@ repositories {
 }
 
 dependencies {
-    //classpath 'net.ltgt.gradle:gradle-apt-plugin:0.18'
+    classpath 'net.ltgt.gradle:gradle-apt-plugin:0.18'
     classpath 'com.adarshr:gradle-test-logger-plugin:1.5.0'
     classpath 'com.android.tools.build:gradle:3.2.0'
     classpath 'com.moowork.gradle:gradle-node-plugin:1.2.0'
