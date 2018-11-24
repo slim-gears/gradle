@@ -8,7 +8,7 @@ project.android {
         targetSdkVersion 28
         versionCode 1
         versionName project.version.toString()
-        //testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
         release {
@@ -23,6 +23,7 @@ project.android {
     testOptions {
         unitTests {
             returnDefaultValues = true
+            includeAndroidResources = true
         }
     }
 }
@@ -35,4 +36,15 @@ dependencies {
     testImplementation libs.robolectric
     testImplementation libs.mockito
     testImplementation libs.junit
+}
+
+project.afterEvaluate {
+    if (project.configurations.findByName('androidTestImplementation')) {
+        project.dependencies {
+            androidTestImplementation libs.androidTestRules
+            androidTestImplementation libs.androidTestRunner
+            androidTestImplementation libs.androidEspressoCore
+            androidTestImplementation libs.mockito
+        }
+    }
 }
