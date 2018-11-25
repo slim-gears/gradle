@@ -1,4 +1,4 @@
-def sdkDir = "$rootProject.projectDir/.sdk"
+def sdkDir = System.getenv('ANDROID_HOME') ?: "$rootProject.projectDir/.sdk"
 
 static def loadLicenses(String filePath) {
     def licensesFile = new File(filePath)
