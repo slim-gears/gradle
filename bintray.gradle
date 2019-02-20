@@ -11,10 +11,6 @@ ext {
     bintrayKey = System.getenv('BINTRAY_KEY')
 }
 
-println "project.bintrayUser: $project.bintrayUser"
-println "project.bintrayKey: $project.bintrayKey"
-println "project.hasProperty('bintray'): ${project.hasProperty('bintray')}"
-
 if (project.bintrayUser != null && project.bintrayKey != null && project.hasProperty('bintray')) {
     apply plugin: 'com.jfrog.bintray.multipackage'
     project.afterEvaluate {
