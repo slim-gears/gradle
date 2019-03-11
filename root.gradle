@@ -18,12 +18,18 @@ static def loadProperties(Project prj, File file) {
             prj.ext.props << prj.rootProject.props
         }
     }
+    def name = file.name.take(file.name.lastIndexOf('.')) as String
+
     def props = new Properties()
+    if (prj != prj.rootProject) {
+        prj.rootProject.props[name].each { props[it.key] = it.value }
+    }
+
     file.withInputStream { props.load(it) }
     def evaluator = new SimpleTemplateEngine()
     Map bindings = new HashMap(props)
-    def name = file.name.take(file.name.lastIndexOf('.')) as String
     bindings.projectName = prj.name
+
     def needsEvaluation = true
     while (needsEvaluation) {
         def evaluatedCount = 0
