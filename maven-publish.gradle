@@ -74,6 +74,10 @@ class SourceSetDependency extends AbstractDependency implements FileCollectionDe
         this.sourceSet = sourceSet
     }
 
+    SourceSetDependency(Project project, String sourceSetName) {
+        this(project, project.sourceSets.getByName(sourceSetName));
+    }
+
     @Override
     FileCollection getFiles() {
         return sourceSet.output
@@ -131,6 +135,10 @@ class SourceSetDependency extends AbstractDependency implements FileCollectionDe
 }
 
 def sourceSetDependency(SourceSet sourceSet) {
+    return new SourceSetDependency(project, sourceSet)
+}
+
+def sourceSetDependency(String sourceSet) {
     return new SourceSetDependency(project, sourceSet)
 }
 
