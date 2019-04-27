@@ -52,21 +52,12 @@ def createScript(String path, String text) {
     file.setExecutable(true, true)
 }
 
-task createWrapperScripts(type: DefaultTask, dependsOn: nodeSetup) {
-    outputs.files('npm', 'ng', 'npm.cmd', 'npm')
+task createNgWrapperScripts(type: DefaultTask, dependsOn: nodeSetup) {
+    outputs.files('ng', 'ng.cmd')
     doLast {
         def nodeDir = node.variant.nodeDir
         def relativePath = project.projectDir.toPath().relativize(nodeDir.toPath())
         def canonicRelativePath = relativePath.toString().replace('\\', '/')
-
-        createScript('npm',
-"""#!/bin/sh
-basedir=\$(dirname "\$(echo "\$0" | sed -e 's,\\\\,/,g')")
-\$basedir/$canonicRelativePath/node "\$baseDir/$canonicRelativePath/node_module/npm/bin/npm-cli.js" \$*
-""")
-        createScript('npm.cmd',
-"""@%~dp0$relativePath\\node "%~dp0$relativePath\\node_modules\\npm\\bin\\npm-cli.js" %*
-""")
 
         createScript('ng',
 """#!/bin/sh
@@ -78,6 +69,24 @@ basedir=\$(dirname "\$(echo "\$0" | sed -e 's,\\\\,/,g')")
 """@%~dp0$relativePath\\node "%~dp0\\node_modules\\@angular\\cli\\bin\\ng" %*
 """)
 
+    }
+}
+
+task createNpmWrapperScripts(type: DefaultTask, dependsOn: nodeSetup) {
+    outputs.files('npm', 'npm.cmd')
+    doLast {
+        def nodeDir = node.variant.nodeDir
+        def relativePath = project.projectDir.toPath().relativize(nodeDir.toPath())
+        def canonicRelativePath = relativePath.toString().replace('\\', '/')
+
+        createScript('npm',
+"""#!/bin/sh
+basedir=\$(dirname "\$(echo "\$0" | sed -e 's,\\\\,/,g')")
+\$basedir/$canonicRelativePath/node "\$basedir/$canonicRelativePath/node_modules/npm/bin/npm-cli.js" \$*
+""")
+        createScript('npm.cmd',
+"""@%~dp0$relativePath\\node "%~dp0$relativePath\\node_modules\\npm\\bin\\npm-cli.js" %*
+""")
     }
 }
 
