@@ -46,6 +46,10 @@ task npmTest(type: NpmTask, dependsOn: npmBuild) {
     args = ['run','test']
 }
 
+task npmPrune(type: NpmTask) {
+    args = ['prune']
+}
+
 def createScript(String path, String text) {
     def file = project.file(path)
     file.text = text
@@ -61,12 +65,14 @@ task createNgWrapperScripts(type: DefaultTask, dependsOn: nodeSetup) {
 
         createScript('ng',
 """#!/bin/sh
+PATH=\$PATH:\$basedir/$canonicRelativePath
 basedir=\$(dirname "\$(echo "\$0" | sed -e 's,\\\\,/,g')")
 \$basedir/$canonicRelativePath/node "\$basedir/node_modules/@angular/cli/bin/ng" \$*
 """)
 
         createScript('ng.cmd',
-"""@%~dp0$relativePath\\node "%~dp0\\node_modules\\@angular\\cli\\bin\\ng" %*
+"""@set PATH=%PATH%;%~dp0$relativePath
+@%~dp0$relativePath\\node "%~dp0\\node_modules\\@angular\\cli\\bin\\ng" %*
 """)
 
     }
@@ -81,11 +87,13 @@ task createNpmWrapperScripts(type: DefaultTask, dependsOn: nodeSetup) {
 
         createScript('npm',
 """#!/bin/sh
+PATH=\$PATH:\$basedir/$canonicRelativePath
 basedir=\$(dirname "\$(echo "\$0" | sed -e 's,\\\\,/,g')")
 \$basedir/$canonicRelativePath/node "\$basedir/$canonicRelativePath/node_modules/npm/bin/npm-cli.js" \$*
 """)
         createScript('npm.cmd',
-"""@%~dp0$relativePath\\node "%~dp0$relativePath\\node_modules\\npm\\bin\\npm-cli.js" %*
+"""@set PATH=%PATH%;%~dp0$relativePath
+@%~dp0$relativePath\\node "%~dp0$relativePath\\node_modules\\npm\\bin\\npm-cli.js" %*
 """)
     }
 }
@@ -98,12 +106,11 @@ if (!System.getenv('JITPACK')) {
 }
 
 project.afterEvaluate {
-    npmInstall.outputs.file("$node.nodeModulesDir/node_modules")
+    npmInstall.outputs.files project.fileTree("$node.nodeModulesDir/node_modules")
     npmInstall.inputs.file("$node.nodeModulesDir/package.json")
 }
 
 clean.doLast {
-    //file("$node.nodeModulesDir/node_modules").deleteDir()
     file("$projectDir/npm").delete()
     file("$projectDir/npm.cmd").delete()
     file("$projectDir/ng").delete()
