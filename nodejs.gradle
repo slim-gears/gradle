@@ -106,7 +106,7 @@ if (!System.getenv('JITPACK')) {
 }
 
 project.afterEvaluate { prj ->
-    npmInstall.outputs.files prj.file("$node.nodeModulesDir/node_modules")
+    npmInstall.outputs.dir "$node.nodeModulesDir/node_modules"
     npmInstall.inputs.file "$node.nodeModulesDir/package.json"
 }
 
