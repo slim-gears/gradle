@@ -89,11 +89,11 @@ task createNpmWrapperScripts(type: DefaultTask, dependsOn: nodeSetup) {
 """#!/bin/sh
 PATH=\$PATH:\$basedir/$canonicRelativePath
 basedir=\$(dirname "\$(echo "\$0" | sed -e 's,\\\\,/,g')")
-\$basedir/$canonicRelativePath/node "\$basedir/$canonicRelativePath/node_modules/npm/bin/npm-cli.js" \$*
+\$basedir/$canonicRelativePath/node "\$basedir/$canonicRelativePath/node_modules/npm/bin/npm-cli.js" \$* --scripts-prepend-node-path=auto
 """)
         createScript('npm.cmd',
 """@set PATH=%PATH%;%~dp0$relativePath
-@%~dp0$relativePath\\node "%~dp0$relativePath\\node_modules\\npm\\bin\\npm-cli.js" %*
+@%~dp0$relativePath\\node "%~dp0$relativePath\\node_modules\\npm\\bin\\npm-cli.js" %* --scripts-prepend-node-path=auto
 """)
     }
 }
