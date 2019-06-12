@@ -12,7 +12,7 @@ node {
     nodeModulesDir = file(project.projectDir)
 }
 
-def packageInstallTask = npmInstall
+def packageInstallTask = yarn
 
 task npmBuildDev(type: NpmTask, dependsOn:packageInstallTask) {
     group = 'build'
