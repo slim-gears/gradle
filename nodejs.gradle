@@ -2,7 +2,7 @@ apply plugin: 'java'
 apply plugin: 'com.moowork.node'
 
 project.ext {
-    defaultNodeVer = '10.8.0'
+    defaultNodeVer = '12.4.0'
 }
 
 node {
@@ -12,19 +12,21 @@ node {
     nodeModulesDir = file(project.projectDir)
 }
 
-task npmBuildDev(type: NpmTask, dependsOn:npmInstall) {
+def packageInstallTask = npmInstall
+
+task npmBuildDev(type: NpmTask, dependsOn:packageInstallTask) {
     group = 'build'
     description = 'Compile client side folder for development'
     args = ['run','buildDev']
 }
 
-task npmBuildWatch(type: NpmTask, dependsOn:npmInstall) {
+task npmBuildWatch(type: NpmTask, dependsOn:packageInstallTask) {
     group = 'application'
     description = "Build and watches the client side assets for rebuilding"
     args = ['run','buildWatch']
 }
 
-task npmBuild(type:NpmTask, dependsOn:npmInstall) {
+task npmBuild(type:NpmTask, dependsOn:packageInstallTask) {
     group = 'build'
     description = "Compile client side folder for production"
     args = ['run','build']
@@ -78,7 +80,7 @@ basedir=\$(dirname "\$(echo "\$0" | sed -e 's,\\\\,/,g')")
     }
 }
 
-task createNpmWrapperScripts(type: DefaultTask, dependsOn: nodeSetup) {
+task createNpmWrapperScripts(type: DefaultTask, dependsOn: npmSetup) {
     outputs.files('npm', 'npm.cmd')
     doLast {
         def nodeDir = node.variant.nodeDir
@@ -98,6 +100,26 @@ basedir=\$(dirname "\$(echo "\$0" | sed -e 's,\\\\,/,g')")
     }
 }
 
+task createYarnWrapperScripts(type: DefaultTask, dependsOn: yarnSetup) {
+    outputs.files('yarn', 'yarn.cmd')
+    doLast {
+        def nodeDir = node.variant.nodeDir
+        def relativePath = project.projectDir.toPath().relativize(nodeDir.toPath())
+        def canonicRelativePath = relativePath.toString().replace('\\', '/')
+
+        createScript('yarn',
+"""#!/bin/sh
+basedir=\$(dirname "\$(echo "\$0" | sed -e 's,\\\\,/,g')")
+PATH=\$PATH:\$basedir/.gradle/yarn/yarn-latest:\$basedir/$canonicRelativePath
+\$basedir/.gradle/yarn/yarn-latest/yarn \$*
+""")
+        createScript('yarn.cmd',
+"""@set PATH=%PATH%;%~dp0.gradle\\yarn\\yarn-latest;%~dp0$relativePath
+%~dp0.gradle\\yarn\\yarn-latest\\yarn %*
+""")
+    }
+}
+
 if (!System.getenv('JITPACK')) {
     jar.dependsOn(npmBuild)
     if (!project.hasProperty('skipTests') || !project.skipTests) {
@@ -108,11 +130,25 @@ if (!System.getenv('JITPACK')) {
 project.afterEvaluate { prj ->
     npmInstall.outputs.dir "$node.nodeModulesDir/node_modules"
     npmInstall.inputs.file "$node.nodeModulesDir/package.json"
+    yarn.outputs.dir "$node.nodeModulesDir/node_modules"
+    yarn.inputs.file "$node.nodeModulesDir/yarn.lock"
+}
+
+static def deleteIfExists(File file) {
+    if (file.exists()) {
+        file.delete()
+    }
+}
+
+def deleteIfExists(String path) {
+    return deleteIfExists(project.file(path))
 }
 
 clean.doLast {
-    file("$projectDir/npm").delete()
-    file("$projectDir/npm.cmd").delete()
-    file("$projectDir/ng").delete()
-    file("$projectDir/ng.cmd").delete()
+    deleteIfExists("$projectDir/npm")
+    deleteIfExists("$projectDir/npm.cmd")
+    deleteIfExists("$projectDir/ng")
+    deleteIfExists("$projectDir/ng.cmd")
+    deleteIfExists("$projectDir/yarn")
+    deleteIfExists("$projectDir/yarn.cmd")
 }
