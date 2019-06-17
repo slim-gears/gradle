@@ -12,24 +12,30 @@ node {
     nodeModulesDir = file(project.projectDir)
 }
 
-def packageInstallTask = yarn
 
-task npmBuildDev(type: NpmTask, dependsOn:packageInstallTask) {
+
+task npmBuildDev(type: NpmTask, dependsOn:npmInstall) {
     group = 'build'
     description = 'Compile client side folder for development'
     args = ['run','buildDev']
 }
 
-task npmBuildWatch(type: NpmTask, dependsOn:packageInstallTask) {
+task npmBuildWatch(type: NpmTask, dependsOn:npmInstall) {
     group = 'application'
     description = "Build and watches the client side assets for rebuilding"
     args = ['run','buildWatch']
 }
 
-task npmBuild(type:NpmTask, dependsOn:packageInstallTask) {
+task npmBuild(type:NpmTask, dependsOn:npmInstall) {
     group = 'build'
     description = "Compile client side folder for production"
     args = ['run','build']
+}
+
+task yarnBuild(type:YarnTask, dependsOn:yarn) {
+    group = 'build'
+    description = "Compile client side folder for production"
+    args = ['build']
 }
 
 task npmPack(type:NpmTask, dependsOn:npmBuild) {
@@ -38,14 +44,22 @@ task npmPack(type:NpmTask, dependsOn:npmBuild) {
     args = ['pack']
 }
 
-task npmTest(type: NpmTask, dependsOn: npmBuild) {
-    onlyIf {
-        !npmBuild.state.upToDate
-    }
+task yarnPack(type:YarnTask, dependsOn:yarnBuild) {
+    group = 'pack'
+    description = "Pack NPM package"
+    args = ['pack']
+}
 
+task npmTest(type: NpmTask, dependsOn: npmBuild) {
     group = 'test'
     description = "Run NPM tests"
     args = ['run','test']
+}
+
+task yarnTest(type: YarnTask, dependsOn: yarnBuild) {
+    group = 'test'
+    description = "Run NPM tests"
+    args = ['test']
 }
 
 task npmPrune(type: NpmTask) {
@@ -121,9 +135,9 @@ PATH=\$PATH:\$basedir/.gradle/yarn/yarn-latest:\$basedir/$canonicRelativePath
 }
 
 if (!System.getenv('JITPACK')) {
-    jar.dependsOn(npmBuild)
+    jar.dependsOn(yarnBuild)
     if (!project.hasProperty('skipTests') || !project.skipTests) {
-        test.dependsOn(npmTest)
+        test.dependsOn(yarnTest)
     }
 }
 
