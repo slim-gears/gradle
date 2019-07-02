@@ -137,7 +137,7 @@ PATH=\$PATH:\$basedir/.gradle/yarn/yarn-latest:\$basedir/$canonicRelativePath
 })
 
 if (!System.getenv('JITPACK')) {
-    jar.dependsOn(yarnBuild)
+    processResources.dependsOn(yarnBuild)
     if (!project.hasProperty('skipTests') || !project.skipTests) {
         test.dependsOn(yarnTest)
     }
