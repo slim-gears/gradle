@@ -12,24 +12,30 @@ node {
     nodeModulesDir = file(project.projectDir)
 }
 
-def packageInstallTask = yarn
 
-task npmBuildDev(type: NpmTask, dependsOn:packageInstallTask) {
+
+task npmBuildDev(type: NpmTask, dependsOn:npmInstall) {
     group = 'build'
     description = 'Compile client side folder for development'
     args = ['run','buildDev']
 }
 
-task npmBuildWatch(type: NpmTask, dependsOn:packageInstallTask) {
+task npmBuildWatch(type: NpmTask, dependsOn:npmInstall) {
     group = 'application'
     description = "Build and watches the client side assets for rebuilding"
     args = ['run','buildWatch']
 }
 
-task npmBuild(type:NpmTask, dependsOn:packageInstallTask) {
+task npmBuild(type:NpmTask, dependsOn:npmInstall) {
     group = 'build'
     description = "Compile client side folder for production"
     args = ['run','build']
+}
+
+task yarnBuild(type:YarnTask, dependsOn:yarn) {
+    group = 'build'
+    description = "Compile client side folder for production"
+    args = ['build']
 }
 
 task npmPack(type:NpmTask, dependsOn:npmBuild) {
@@ -38,14 +44,26 @@ task npmPack(type:NpmTask, dependsOn:npmBuild) {
     args = ['pack']
 }
 
-task npmTest(type: NpmTask, dependsOn: npmBuild) {
-    onlyIf {
-        !npmBuild.state.upToDate
-    }
+task yarnVersion(type: YarnTask, dependsOn: yarnBuild) {
+    args = ['version', '--no-git-tag-version', '--new-version', project.version]
+}
 
+task yarnPack(type: YarnTask, dependsOn: yarnBuild) {
+    group = 'pack'
+    description = "Pack NPM package"
+    args = ['pack']
+}
+
+task npmTest(type: NpmTask, dependsOn: npmBuild) {
     group = 'test'
     description = "Run NPM tests"
     args = ['run','test']
+}
+
+task yarnTest(type: YarnTask, dependsOn: yarnBuild) {
+    group = 'test'
+    description = "Run NPM tests"
+    args = ['test']
 }
 
 task npmPrune(type: NpmTask) {
@@ -58,81 +76,73 @@ def createScript(String path, String text) {
     file.setExecutable(true, true)
 }
 
-task createNgWrapperScripts(type: DefaultTask, dependsOn: nodeSetup) {
-    outputs.files('ng', 'ng.cmd')
-    doLast {
-        def nodeDir = node.variant.nodeDir
-        def relativePath = project.projectDir.toPath().relativize(nodeDir.toPath())
-        def canonicRelativePath = relativePath.toString().replace('\\', '/')
+project.afterEvaluate({ prj ->
+    def baseDir = node.nodeModulesDir
+    def nodeDir = node.variant.nodeDir
+    def nodeRelativePath = baseDir.toPath().relativize(nodeDir.toPath())
+    def canonicRelativePath = nodeRelativePath.toString().replace('\\', '/')
+    def prjDirRelativeToNode = baseDir.toPath().relativize(project.projectDir.toPath())
+    def prjDirRelativeToNodeCanonic = prjDirRelativeToNode.toString().replace('\\', '/')
 
-        createScript('ng',
-"""#!/bin/sh
+    task createNgWrapperScripts(type: DefaultTask, dependsOn: nodeSetup) {
+        outputs.files("$baseDir/ng", "$baseDir/ng.cmd")
+        doLast {
+
+            createScript("$baseDir/ng",
+                    """#!/bin/sh
 PATH=\$PATH:\$basedir/$canonicRelativePath
 basedir=\$(dirname "\$(echo "\$0" | sed -e 's,\\\\,/,g')")
 \$basedir/$canonicRelativePath/node "\$basedir/node_modules/@angular/cli/bin/ng" \$*
 """)
 
-        createScript('ng.cmd',
-"""@set PATH=%PATH%;%~dp0$relativePath
-@%~dp0$relativePath\\node "%~dp0\\node_modules\\@angular\\cli\\bin\\ng" %*
+            createScript("$baseDir/ng.cmd",
+                    """@set PATH=%PATH%;%~dp0$nodeRelativePath
+@%~dp0$nodeRelativePath\\node "%~dp0\\node_modules\\@angular\\cli\\bin\\ng" %*
 """)
 
+        }
     }
-}
 
-task createNpmWrapperScripts(type: DefaultTask, dependsOn: npmSetup) {
-    outputs.files('npm', 'npm.cmd')
-    doLast {
-        def nodeDir = node.variant.nodeDir
-        def relativePath = project.projectDir.toPath().relativize(nodeDir.toPath())
-        def canonicRelativePath = relativePath.toString().replace('\\', '/')
-
-        createScript('npm',
-"""#!/bin/sh
+    task createNpmWrapperScripts(type: DefaultTask, dependsOn: npmSetup) {
+        outputs.files("$baseDir/npm", "$baseDir/npm.cmd")
+        doLast {
+            createScript("$baseDir/npm",
+                    """#!/bin/sh
+basedir=\$(PWD)/\$(dirname "\$(echo "\$0" | sed -e 's,\\\\,/,g')")
 PATH=\$PATH:\$basedir/$canonicRelativePath
-basedir=\$(dirname "\$(echo "\$0" | sed -e 's,\\\\,/,g')")
 \$basedir/$canonicRelativePath/node "\$basedir/$canonicRelativePath/node_modules/npm/bin/npm-cli.js" \$* --scripts-prepend-node-path=auto
 """)
-        createScript('npm.cmd',
-"""@set PATH=%PATH%;%~dp0$relativePath
-@%~dp0$relativePath\\node "%~dp0$relativePath\\node_modules\\npm\\bin\\npm-cli.js" %* --scripts-prepend-node-path=auto
+            createScript("$baseDir/npm.cmd",
+                    """@set PATH=%PATH%;%~dp0$nodeRelativePath
+@%~dp0$nodeRelativePath\\node "%~dp0$nodeRelativePath\\node_modules\\npm\\bin\\npm-cli.js" %* --scripts-prepend-node-path=auto
 """)
+        }
     }
-}
 
-task createYarnWrapperScripts(type: DefaultTask, dependsOn: yarnSetup) {
-    outputs.files('yarn', 'yarn.cmd')
-    doLast {
-        def nodeDir = node.variant.nodeDir
-        def relativePath = project.projectDir.toPath().relativize(nodeDir.toPath())
-        def canonicRelativePath = relativePath.toString().replace('\\', '/')
-
-        createScript('yarn',
-"""#!/bin/sh
-basedir=\$(dirname "\$(echo "\$0" | sed -e 's,\\\\,/,g')")
+    task createYarnWrapperScripts(type: DefaultTask, dependsOn: yarnSetup) {
+        outputs.files("$baseDir/yarn", "$baseDir/yarn.cmd")
+        doLast {
+            createScript("$baseDir/yarn",
+                    """#!/bin/sh
+basedir=\$(PWD)/\$(dirname "\$(echo "\$0" | sed -e 's,\\\\,/,g')")/$prjDirRelativeToNodeCanonic
 PATH=\$PATH:\$basedir/.gradle/yarn/yarn-latest:\$basedir/$canonicRelativePath
 \$basedir/.gradle/yarn/yarn-latest/yarn \$*
 """)
-        createScript('yarn.cmd',
-"""@set PATH=%PATH%;%~dp0.gradle\\yarn\\yarn-latest;%~dp0$relativePath
-%~dp0.gradle\\yarn\\yarn-latest\\yarn %*
+            createScript("$baseDir/yarn.cmd",
+                    """@set PATH=%PATH%;%~dp0${prjDirRelativeToNode}\\.gradle\\yarn\\yarn-latest;%~dp0$nodeRelativePath
+%~dp0${prjDirRelativeToNode}\\.gradle\\yarn\\yarn-latest\\yarn %*
 """)
+        }
     }
-}
+})
 
 if (!System.getenv('JITPACK')) {
-    jar.dependsOn(npmBuild)
+    processResources.dependsOn(yarnBuild)
     if (!project.hasProperty('skipTests') || !project.skipTests) {
-        test.dependsOn(npmTest)
+        test.dependsOn(yarnTest)
     }
 }
 
-project.afterEvaluate { prj ->
-    npmInstall.outputs.dir "$node.nodeModulesDir/node_modules"
-    npmInstall.inputs.file "$node.nodeModulesDir/package.json"
-    yarn.outputs.dir "$node.nodeModulesDir/node_modules"
-    yarn.inputs.file "$node.nodeModulesDir/yarn.lock"
-}
 
 static def deleteIfExists(File file) {
     if (file.exists()) {
@@ -144,11 +154,19 @@ def deleteIfExists(String path) {
     return deleteIfExists(project.file(path))
 }
 
-clean.doLast {
-    deleteIfExists("$projectDir/npm")
-    deleteIfExists("$projectDir/npm.cmd")
-    deleteIfExists("$projectDir/ng")
-    deleteIfExists("$projectDir/ng.cmd")
-    deleteIfExists("$projectDir/yarn")
-    deleteIfExists("$projectDir/yarn.cmd")
+project.afterEvaluate { prj ->
+    npmInstall.outputs.dir "$node.nodeModulesDir/node_modules"
+    npmInstall.inputs.file "$node.nodeModulesDir/package.json"
+    yarn.outputs.dir "$node.nodeModulesDir/node_modules"
+    yarn.inputs.file "$node.nodeModulesDir/yarn.lock"
+    yarnPack.inputs.file "$node.nodeModulesDir/package.json"
+    yarnPack.inputs.files yarnBuild.inputs.files
+    clean.doLast {
+        deleteIfExists("$node.nodeModulesDir/npm")
+        deleteIfExists("$node.nodeModulesDir/npm.cmd")
+        deleteIfExists("$node.nodeModulesDir/ng")
+        deleteIfExists("$node.nodeModulesDir/ng.cmd")
+        deleteIfExists("$node.nodeModulesDir/yarn")
+        deleteIfExists("$node.nodeModulesDir/yarn.cmd")
+    }
 }
