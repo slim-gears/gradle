@@ -31,7 +31,6 @@ ext.addPublication = { SourceSet sourceSet  ->
         from sourceSet.output
         def artifactId = project.getArtifactId(sourceSet)
         archiveBaseName = artifactId
-        sourceSet.output.each { println "Adding $it to $artifactId" }
     }
 
     project.publishing.publications.create("${sourceSetName}Maven", MavenPublication) {
