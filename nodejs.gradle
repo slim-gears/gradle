@@ -51,12 +51,14 @@ task yarnPack(type:YarnTask, dependsOn:yarnBuild) {
 }
 
 task npmTest(type: NpmTask, dependsOn: npmBuild) {
+    onlyIf { !npmBuild.state.upToDate }
     group = 'test'
     description = "Run NPM tests"
     args = ['run','test']
 }
 
 task yarnTest(type: YarnTask, dependsOn: yarnBuild) {
+    onlyIf { !yarnBuild.state.upToDate }
     group = 'test'
     description = "Run NPM tests"
     args = ['test']
