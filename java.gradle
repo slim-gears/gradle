@@ -16,10 +16,18 @@ configurations {
 
 test {
     reports {
-        junitXml.enabled = false
+        junitXml.enabled = true
         html.enabled = true
     }
 }
+
+task zipTestReport(type: Zip, dependsOn: test) {
+    destinationDirectory = file("$rootProject.projectDir/reports")
+    archiveName = "test-report-${project.name}.zip"
+    from fileTree("$buildDir/reports/tests/test")
+}
+
+test.finalizedBy(zipTestReport)
 
 project.afterEvaluate {
     configurations {
