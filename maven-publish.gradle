@@ -27,19 +27,19 @@ ext.addPublication = { SourceSet sourceSet  ->
         classifier = 'javadoc'
     }
 
-    def jarTask = project.tasks.create(name: "${sourceSetName}Jar", type: Jar, dependsOn: sourceSet.classesTaskName) {
+    def jarTask = sourceSetName.equals('main') ? jar : project.tasks.create(name: "${sourceSetName}Jar", type: Jar, dependsOn: sourceSet.classesTaskName) {
         from sourceSet.output
+        def artifactId = project.getArtifactId(sourceSet)
+        archiveBaseName = artifactId
     }
 
     project.publishing.publications.create("${sourceSetName}Maven", MavenPublication) {
         groupId = project.group
         artifactId = project.getArtifactId(sourceSet)
         artifact sourcesJarTask
-        if (sourceSetName != 'main') {
-            artifact jarTask
-        } else {
+        artifact jarTask
+        if (sourceSetName == 'main') {
             artifact javaDocJarTask
-            artifact jar
         }
         pom.withXml {
             def depsNode = asNode().appendNode('dependencies')
@@ -75,7 +75,7 @@ class SourceSetDependency extends AbstractDependency implements FileCollectionDe
     }
 
     SourceSetDependency(Project project, String sourceSetName) {
-        this(project, project.sourceSets.getByName(sourceSetName));
+        this(project, project.sourceSets.getByName(sourceSetName))
     }
 
     @Override
@@ -91,11 +91,6 @@ class SourceSetDependency extends AbstractDependency implements FileCollectionDe
     @Override
     Set<File> resolve(boolean transitive) {
         return sourceSet.output.files
-    }
-
-    @Override
-    TaskDependency getBuildDependencies() {
-        return sourceSet.output
     }
 
     @Override
@@ -130,6 +125,11 @@ class SourceSetDependency extends AbstractDependency implements FileCollectionDe
 
     @Override
     ComponentIdentifier getTargetComponentId() {
+        return null
+    }
+
+    @Override
+    TaskDependency getBuildDependencies() {
         return null
     }
 }
