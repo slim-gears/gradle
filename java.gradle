@@ -15,15 +15,20 @@ configurations {
 }
 
 test {
+    //maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
     reports {
         junitXml.enabled = true
         html.enabled = true
+    }
+    testlogger {
+        theme 'standard-parallel'
+        slowThreshold 4000
     }
 }
 
 task zipTestReport(type: Zip, dependsOn: test) {
     destinationDirectory = file("$rootProject.projectDir/reports")
-    archiveName = "test-report-${project.name}.zip"
+    archiveFileName = "test-report-${project.name}.zip"
     from fileTree("$buildDir/reports/tests/test")
 }
 
