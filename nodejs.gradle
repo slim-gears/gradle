@@ -139,12 +139,13 @@ PATH=\$PATH:\$basedir/.gradle/yarn/yarn-latest:\$basedir/$canonicRelativePath
 })
 
 if (!System.getenv('JITPACK')) {
-    processResources.dependsOn(yarnBuild)
-    if (!project.hasProperty('skipTests') || !project.skipTests) {
-        test.dependsOn(yarnTest)
+    if (!project.hasProperty('skipFrontend') || project.skipFrontend.toString() == "false") {
+        processResources.dependsOn(yarnBuild)
+        if (!project.hasProperty('skipTests') || project.skipTests.toString() == "false") {
+            test.dependsOn(yarnTest)
+        }
     }
 }
-
 
 static def deleteIfExists(File file) {
     if (file.exists()) {
