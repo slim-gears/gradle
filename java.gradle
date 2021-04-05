@@ -9,8 +9,12 @@ tasks.withType(JavaCompile) {
 }
 
 dependencies {
-    testImplementation libs.junit
-    testImplementation libs.mockito
+    if (libs.hasProperty('junit')) {
+        testImplementation libs.junit
+    }
+    if (libs.hasProperty('mockito')) {
+        testImplementation libs.mockito
+    }
 }
 
 configurations {
