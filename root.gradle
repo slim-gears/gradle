@@ -7,7 +7,9 @@ if (!rootProject.hasProperty('scriptsDir')) {
 project.group projectGroup
 project.version = System.getenv('TRAVIS_TAG') ?: projectVersion
 
-project.ext.sourceCompatibility = 1.8
+if (!rootProject.hasProperty('sourceCompatibility')) {
+    project.ext.sourceCompatibility = JavaVersion.VERSION_1_8
+}
 
 static def loadProperties(Project prj, File file) {
     if (!prj.hasProperty('props')) {

@@ -3,7 +3,10 @@ apply plugin: 'java'
 apply plugin: 'net.ltgt.apt-idea'
 apply plugin: 'com.adarshr.test-logger'
 
-sourceCompatibility = rootProject.sourceCompatibility
+tasks.withType(JavaCompile) {
+    sourceCompatibility = rootProject.sourceCompatibility
+    targetCompatibility = rootProject.sourceCompatibility
+}
 
 dependencies {
     testImplementation libs.junit
