@@ -8,15 +8,6 @@ tasks.withType(JavaCompile) {
     targetCompatibility = rootProject.sourceCompatibility
 }
 
-dependencies {
-    if (libs.hasProperty('junit')) {
-        testImplementation libs.junit
-    }
-    if (libs.hasProperty('mockito')) {
-        testImplementation libs.mockito
-    }
-}
-
 configurations {
     bundledImplementation
 }
