@@ -1,8 +1,8 @@
 apply plugin: 'java'
-apply plugin: 'com.moowork.node'
+apply plugin: 'com.github.node-gradle.node'
 
 project.ext {
-    defaultNodeVer = '12.4.0'
+    defaultNodeVer = libs.nodeVer
 }
 
 node {
@@ -79,8 +79,8 @@ def createScript(String path, String text) {
 }
 
 project.afterEvaluate({ prj ->
-    def baseDir = node.nodeModulesDir
-    def nodeDir = node.variant.nodeDir
+    def baseDir = prj.file(prj.node.nodeModulesDir)
+    def nodeDir = prj.file(nodeSetup.nodeDir)
     def nodeRelativePath = baseDir.toPath().relativize(nodeDir.toPath())
     def canonicRelativePath = nodeRelativePath.toString().replace('\\', '/')
     def prjDirRelativeToNode = baseDir.toPath().relativize(project.projectDir.toPath())
@@ -158,18 +158,19 @@ def deleteIfExists(String path) {
 }
 
 project.afterEvaluate { prj ->
-    npmInstall.outputs.dir "$node.nodeModulesDir/node_modules"
-    npmInstall.inputs.file "$node.nodeModulesDir/package.json"
-    yarn.outputs.dir "$node.nodeModulesDir/node_modules"
-    yarn.inputs.file "$node.nodeModulesDir/yarn.lock"
-    yarnPack.inputs.file "$node.nodeModulesDir/package.json"
+    def nodeModulesDir = prj.node.nodeModulesDir.get()
+    npmInstall.outputs.dir "$nodeModulesDir/node_modules"
+    npmInstall.inputs.file "$nodeModulesDir/package.json"
+    yarn.outputs.dir "$nodeModulesDir/node_modules"
+    yarn.inputs.file "$nodeModulesDir/yarn.lock"
+    yarnPack.inputs.file "$nodeModulesDir/package.json"
     yarnPack.inputs.files yarnBuild.inputs.files
     clean.doLast {
-        deleteIfExists("$node.nodeModulesDir/npm")
-        deleteIfExists("$node.nodeModulesDir/npm.cmd")
-        deleteIfExists("$node.nodeModulesDir/ng")
-        deleteIfExists("$node.nodeModulesDir/ng.cmd")
-        deleteIfExists("$node.nodeModulesDir/yarn")
-        deleteIfExists("$node.nodeModulesDir/yarn.cmd")
+        deleteIfExists("$nodeModulesDir/npm")
+        deleteIfExists("$nodeModulesDir/npm.cmd")
+        deleteIfExists("$nodeModulesDir/ng")
+        deleteIfExists("$nodeModulesDir/ng.cmd")
+        deleteIfExists("$nodeModulesDir/yarn")
+        deleteIfExists("$nodeModulesDir/yarn.cmd")
     }
 }
