@@ -49,18 +49,23 @@ task yarnVersion(type: YarnTask, dependsOn: yarnBuild) {
 }
 
 task yarnPack(type: YarnTask, dependsOn: yarnBuild) {
+    inputs.files yarnBuild.outputs.files
+    def packageOutput = "${buildDir}/${project.name}.tgz"
+    outputs.file packageOutput
     group = 'pack'
     description = "Pack NPM package"
-    args = ['pack']
+    args = ['pack', '--filename', packageOutput]
 }
 
 task npmTest(type: NpmTask, dependsOn: npmBuild) {
+    outputs.upToDateWhen { yarnBuild.state.upToDate }
     group = 'test'
     description = "Run NPM tests"
     args = ['run','test']
 }
 
 task yarnTest(type: YarnTask, dependsOn: yarnBuild) {
+    outputs.upToDateWhen { yarnBuild.state.upToDate }
     group = 'test'
     description = "Run NPM tests"
     args = ['test']
