@@ -1,0 +1,22 @@
+if (project.hasProperty('android')) {
+    apply from: "$buildscript.sourceFile.parent/android-maven-publish.gradle"
+} else {
+    apply from: "$buildscript.sourceFile.parent/maven-publish.gradle"
+}
+
+def sonatypeUsername = System.getenv("SONATYPE_USERNAME")
+def sonatypePassword = System.getenv("SONATYPE_PASSWORD")
+
+if (sonatypeUsername && sonatypePassword) {
+    publishing {
+        repositories {
+            maven {
+                url "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+                credentials {
+                    username sonatypeUsername
+                    password sonatypePassword
+                }
+            }
+        }
+    }
+}

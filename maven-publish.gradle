@@ -19,18 +19,18 @@ ext.addPublication = { SourceSet sourceSet  ->
 
     def sourcesJarTask = project.tasks.create(name: "${sourceSetName}SourcesJar", type: Jar) {
         from sourceSet.allSource
-        classifier = 'sources'
+        archiveClassifier.value 'sources'
     }
 
     def javaDocJarTask = project.tasks.create(name: "${sourceSetName}JavaDocJar", type: Jar) {
         from javadoc
-        classifier = 'javadoc'
+        archiveClassifier.value 'javadoc'
     }
 
     def jarTask = sourceSetName.equals('main') ? jar : project.tasks.create(name: "${sourceSetName}Jar", type: Jar, dependsOn: sourceSet.classesTaskName) {
         from sourceSet.output
         def artifactId = project.getArtifactId(sourceSet)
-        archiveBaseName = artifactId
+        archiveBaseName.value artifactId
     }
 
     project.publishing.publications.create("${sourceSetName}Maven", MavenPublication) {
