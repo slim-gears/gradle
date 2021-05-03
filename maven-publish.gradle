@@ -3,12 +3,18 @@ import org.gradle.api.internal.artifacts.dependencies.SelfResolvingDependencyInt
 
 import java.nio.file.Paths
 
-def signingEnabled = project.ext.hasProperty('signing.secretKeyRingFile')
+def signingKeyId = System.getenv("SIGNING_KEY_ID")
+def signingPassword = System.getenv("SIGNING_PASSWORD") ?: ''
+def signingSecretKeyFile = System.getenv("SIGNING_SECRET_KEY_FILE")
+def signingEnabled = signingKeyId && signingSecretKeyFile
+
 if (signingEnabled) {
-    def keyRingFilePath = Paths.get(project.ext.'signing.secretKeyRingFile')
+    def keyRingFilePath = Paths.get(signingSecretKeyFile)
     if (!keyRingFilePath.isAbsolute()) {
         project.ext.'signing.secretKeyRingFile' = "$rootProject.projectDir/$keyRingFilePath"
     }
+    project.ext.'signing.keyId' = signingKeyId
+    project.ext.'signing.password' = signingPassword
 }
 
 apply plugin: 'maven-publish'
