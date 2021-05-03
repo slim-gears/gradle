@@ -1,3 +1,4 @@
+
 if (project.hasProperty('android')) {
     apply from: "$buildscript.sourceFile.parent/android-maven-publish.gradle"
 } else {

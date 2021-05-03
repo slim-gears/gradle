@@ -1,7 +1,18 @@
 import org.gradle.api.internal.artifacts.dependencies.AbstractDependency
 import org.gradle.api.internal.artifacts.dependencies.SelfResolvingDependencyInternal
 
+import java.nio.file.Paths
+
+def signingEnabled = project.ext.hasProperty('signing.secretKeyRingFile')
+if (signingEnabled) {
+    def keyRingFilePath = Paths.get(project.ext.'signing.secretKeyRingFile')
+    if (!keyRingFilePath.isAbsolute()) {
+        project.ext.'signing.secretKeyRingFile' = "$rootProject.projectDir/$keyRingFilePath"
+    }
+}
+
 apply plugin: 'maven-publish'
+apply plugin: 'signing'
 
 publishing {
     repositories {
@@ -9,9 +20,14 @@ publishing {
     }
 }
 
+signing {
+    required { signingEnabled }
+}
+
 ext.getArtifactId = { SourceSet sourceSet ->
     sourceSet.name == 'main' ? project.name : "$project.name-$sourceSet.name"
 }
+
 
 ext.addPublication = { SourceSet sourceSet  ->
 
@@ -33,16 +49,55 @@ ext.addPublication = { SourceSet sourceSet  ->
         archiveBaseName.value artifactId
     }
 
-    project.publishing.publications.create("${sourceSetName}Maven", MavenPublication) {
-        groupId = project.group
-        artifactId = project.getArtifactId(sourceSet)
-        artifact sourcesJarTask
-        artifact jarTask
-        if (sourceSetName == 'main') {
-            artifact javaDocJarTask
+    project.artifacts {
+        archives jarTask
+        archives javaDocJarTask
+        archives sourcesJarTask
+    }
+
+    return project.publishing.publications.create("${sourceSetName}Maven", MavenPublication) {
+        it.groupId = project.group
+        it.artifactId = project.getArtifactId(sourceSet)
+        it.artifact sourcesJarTask
+        it.artifact jarTask
+        it.artifact javaDocJarTask
+
+        it.pom {
+            def projectUrl = "https://github.com/$projectUrlPath"
+            def scmConnection = "scm:git:git://github.com/${projectUrlPath}.git"
+            def scmDeveloperConnection = "scm:git:ssh://git@github.com/${projectUrlPath}.git"
+
+            name = "$rootProject.name / $project.name"
+            description = "$projectDescription / module: $project.name"
+            url = projectUrl
+            licenses {
+                license {
+                    name = projectLicense
+                    url = "$projectUrl/blob/master/LICENSE"
+                    distribution = 'repo'
+                }
+            }
+            scm {
+                url = projectUrl
+                connection = scmConnection
+                developerConnection = scmDeveloperConnection
+            }
+            issueManagement {
+                system = 'GitHub'
+                url = "$projectUrl/issues"
+            }
+            developers {
+                developer {
+                    id = developerId
+                    name = developerName
+                    email = developerEmail
+                }
+            }
         }
-        pom.withXml {
-            def depsNode = asNode().appendNode('dependencies')
+
+        it.pom.withXml {
+            def rootNode = it.asNode()
+            def depsNode = rootNode.appendNode('dependencies')
             def dependencies = configurations.getByName(sourceSet.implementationConfigurationName).allDependencies
             dependencies
                     .findAll { it.group != null && it.name != null }
@@ -146,7 +201,8 @@ project.ext.sourceSetDependency = this.&sourceSetDependency
 
 project.ext.publishSourceSets = { sourceSets ->
     sourceSets.findAll { it.name != 'test' && it.name != 'generated' }.each {
-        project.addPublication(it)
+        def publication = project.addPublication(it)
+        project.signing.sign publication
     }
 }
 
@@ -155,5 +211,6 @@ project.afterEvaluate {
         project.publishSourceSets(project.sourceSets)
     }
 }
+
 
 task install(type: DefaultTask, dependsOn: publishToMavenLocal)

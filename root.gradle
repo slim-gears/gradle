@@ -68,9 +68,8 @@ allprojects { Project prj ->
 
 allprojects {
     repositories {
-        jcenter()
+        mavenCentral()
         mavenLocal()
-        maven { url 'https://dl.bintray.com/slim-gears/maven' }
         maven { url 'https://jitpack.io' }
     }
 }
