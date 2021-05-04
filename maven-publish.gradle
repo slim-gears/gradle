@@ -27,7 +27,7 @@ publishing {
 }
 
 signing {
-    required { signingEnabled }
+    required { signingEnabled && project.file(project.ext.'signing.secretKeyRingFile').exists() }
 }
 
 ext.getArtifactId = { SourceSet sourceSet ->
