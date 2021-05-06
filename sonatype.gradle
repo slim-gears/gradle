@@ -4,22 +4,18 @@ if (project.hasProperty('android')) {
     apply from: "$buildscript.sourceFile.parent/maven-publish.gradle"
 }
 
-def isSnapshot = project.version.endsWith 'SNAPSHOT'
+def isSnapshot = project.version.endsWith '-SNAPSHOT'
 
 if (!isSnapshot &&
     project.hasProperty('sonatype.username') &&
     project.hasProperty('sonatype.password') &&
     project.hasProperty('sonatype.baseUrl')) {
 
-    apply plugin: 'io.codearte.nexus-staging'
     apply plugin: 'io.github.gradle-nexus.publish-plugin'
 
     def sonatypeUser = project.'sonatype.username' as String
     def sonatypePassword = project.'sonatype.password' as String
     def sonatypeUrl = project.'sonatype.baseUrl' as String
-    def sonatypeStagingProfileId = project?.'sonatype.stagingProfileId'
-
-    println "$sonatypeStagingProfileId"
 
     publishing {
         repositories {
@@ -37,24 +33,16 @@ if (!isSnapshot &&
         repositories {
             it.sonatype {  //only for users registered in Sonatype after 24 Feb 2021
                 nexusUrl = uri("$sonatypeUrl/service/local/")
-                snapshotRepositoryUr = uri("$sonatypeUrl/content/repositories/snapshots/")
+                snapshotRepositoryUrl = uri("$sonatypeUrl/content/repositories/snapshots/")
                 username = sonatypeUser
                 password = sonatypePassword
             }
         }
     }
 
-    project.nexusStaging {
-        serverUrl = "$sonatypeUrl/service/local/"
-        packageGroup = project.group
-        if (project.hasProperty('sonatype.stagingProfileId')) {
-            stagingProfileId = project.'sonatype.stagingProfileId' as String
+    project.afterEvaluate {
+        project.tasks.create("publishAndRelease")  {
+            dependsOn(project.publishToSonatype, project.closeAndReleaseSonatypeStagingRepository)
         }
-        username = sonatypeUser
-        password = sonatypePassword
-    }
-
-    task publishAndRelease {
-        dependsOn(project.publishToSonatype, project.closeAndReleaseSonatypeStagingRepository)
     }
 }
