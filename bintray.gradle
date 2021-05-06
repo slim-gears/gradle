@@ -44,7 +44,7 @@ if (project.bintrayUser != null && project.bintrayKey != null && project.hasProp
                         version {
                             name = project.version //Bintray logical version name
                             released = new Date()
-                            vcsTag = System.getenv('TRAVIS_TAG')
+                            vcsTag = project.version
                             if (config.sonatypeUser && config.sonatypePassword) {
                                 mavenCentralSync {
                                     sync = true

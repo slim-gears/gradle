@@ -1,23 +1,60 @@
-
 if (project.hasProperty('android')) {
     apply from: "$buildscript.sourceFile.parent/android-maven-publish.gradle"
 } else {
     apply from: "$buildscript.sourceFile.parent/maven-publish.gradle"
 }
 
-def sonatypeUsername = System.getenv("SONATYPE_USERNAME")
-def sonatypePassword = System.getenv("SONATYPE_PASSWORD")
+def isSnapshot = project.version.endsWith 'SNAPSHOT'
 
-if (sonatypeUsername && sonatypePassword) {
+if (!isSnapshot &&
+    project.hasProperty('sonatype.username') &&
+    project.hasProperty('sonatype.password') &&
+    project.hasProperty('sonatype.baseUrl')) {
+
+    apply plugin: 'io.codearte.nexus-staging'
+    apply plugin: 'io.github.gradle-nexus.publish-plugin'
+
+    def sonatypeUser = project.'sonatype.username' as String
+    def sonatypePassword = project.'sonatype.password' as String
+    def sonatypeUrl = project.'sonatype.baseUrl' as String
+    def sonatypeStagingProfileId = project?.'sonatype.stagingProfileId'
+
+    println "$sonatypeStagingProfileId"
+
     publishing {
         repositories {
             maven {
-                url "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+                url "$sonatypeUrl/service/local/staging/deploy/maven2/"
                 credentials {
-                    username sonatypeUsername
+                    username sonatypeUser
                     password sonatypePassword
                 }
             }
         }
+    }
+
+    project.nexusPublishing {
+        repositories {
+            it.sonatype {  //only for users registered in Sonatype after 24 Feb 2021
+                nexusUrl = uri("$sonatypeUrl/service/local/")
+                snapshotRepositoryUr = uri("$sonatypeUrl/content/repositories/snapshots/")
+                username = sonatypeUser
+                password = sonatypePassword
+            }
+        }
+    }
+
+    project.nexusStaging {
+        serverUrl = "$sonatypeUrl/service/local/"
+        packageGroup = project.group
+        if (project.hasProperty('sonatype.stagingProfileId')) {
+            stagingProfileId = project.'sonatype.stagingProfileId' as String
+        }
+        username = sonatypeUser
+        password = sonatypePassword
+    }
+
+    task publishAndRelease {
+        dependsOn(project.publishToSonatype, project.closeAndReleaseSonatypeStagingRepository)
     }
 }

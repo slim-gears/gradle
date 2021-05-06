@@ -3,18 +3,14 @@ import org.gradle.api.internal.artifacts.dependencies.SelfResolvingDependencyInt
 
 import java.nio.file.Paths
 
-def signingKeyId = System.getenv("SIGNING_KEY_ID")
-def signingPassword = System.getenv("SIGNING_PASSWORD") ?: ''
-def signingSecretKeyFile = System.getenv("SIGNING_SECRET_KEY_FILE")
-def signingEnabled = signingKeyId && signingSecretKeyFile
-
+def signingEnabled = project.hasProperty('signing.keyId') && project.hasProperty('signing.secretKeyRingFile')
 if (signingEnabled) {
-    def keyRingFilePath = Paths.get(signingSecretKeyFile)
-    if (!keyRingFilePath.isAbsolute()) {
-        project.ext.'signing.secretKeyRingFile' = "$rootProject.projectDir/$keyRingFilePath"
+    def keyRingFilePath = project.'signing.secretKeyRingFile' as String
+    keyRingFilePath = keyRingFilePath.replace('~', System.getProperty('user.home'))
+    if (!Paths.get(keyRingFilePath).isAbsolute()) {
+        keyRingFilePath = "$rootProject.projectDir/$keyRingFilePath"
     }
-    project.ext.'signing.keyId' = signingKeyId
-    project.ext.'signing.password' = signingPassword
+    project.'signing.secretKeyRingFile' = keyRingFilePath
 }
 
 apply plugin: 'maven-publish'
@@ -30,51 +26,48 @@ signing {
     required { signingEnabled }
 }
 
-ext.getArtifactId = { SourceSet sourceSet ->
-    sourceSet.name == 'main' ? project.name : "$project.name-$sourceSet.name"
-}
-
-
-ext.addPublication = { SourceSet sourceSet  ->
-
+def addPublication(Project proj, SourceSet sourceSet) {
     def sourceSetName = sourceSet.name
 
-    def sourcesJarTask = project.tasks.create(name: "${sourceSetName}SourcesJar", type: Jar) {
+    def sourcesJarTask = proj.tasks.create(name: "${sourceSetName}SourcesJar", type: Jar) {
         from sourceSet.allSource
         archiveClassifier.value 'sources'
     }
 
-    def javaDocJarTask = project.tasks.create(name: "${sourceSetName}JavaDocJar", type: Jar) {
-        from javadoc
+    def javaDocJarTask = proj.tasks.create(name: "${sourceSetName}JavaDocJar", type: Jar) {
+        from proj.javadoc
         archiveClassifier.value 'javadoc'
     }
 
-    def jarTask = sourceSetName.equals('main') ? jar : project.tasks.create(name: "${sourceSetName}Jar", type: Jar, dependsOn: sourceSet.classesTaskName) {
+    def jarTask = sourceSetName.equals('main') ? proj.jar : proj.tasks.create(name: "${sourceSetName}Jar", type: Jar, dependsOn: sourceSet.classesTaskName) {
         from sourceSet.output
-        def artifactId = project.getArtifactId(sourceSet)
+        def artifactId = SourceSetDependency.getArtifactId(proj, sourceSet)
         archiveBaseName.value artifactId
     }
 
-    project.artifacts {
-        archives jarTask
-        archives javaDocJarTask
-        archives sourcesJarTask
-    }
+    def archivesConfig = proj.configurations.maybeCreate("${sourceSetName}Archives")
 
-    return project.publishing.publications.create("${sourceSetName}Maven", MavenPublication) {
+    proj.artifacts.add(archivesConfig.name, jarTask)
+    proj.artifacts.add(archivesConfig.name, javaDocJarTask)
+    proj.artifacts.add(archivesConfig.name, sourcesJarTask)
+
+    def artifactId = SourceSetDependency.getArtifactId(proj, sourceSet)
+
+    return project.publishing.publications.create("-$artifactId-Maven", MavenPublication) {
         it.groupId = project.group
-        it.artifactId = project.getArtifactId(sourceSet)
-        it.artifact sourcesJarTask
-        it.artifact jarTask
-        it.artifact javaDocJarTask
+        it.artifactId = artifactId
+
+        archivesConfig.artifacts.each { af ->
+            it.artifact af
+        }
 
         it.pom {
             def projectUrl = "https://github.com/$projectUrlPath"
             def scmConnection = "scm:git:git://github.com/${projectUrlPath}.git"
             def scmDeveloperConnection = "scm:git:ssh://git@github.com/${projectUrlPath}.git"
 
-            name = "$rootProject.name / $project.name"
-            description = "$projectDescription / module: $project.name"
+            name = "$rootProject.name / $proj.name"
+            description = "$projectDescription / module: $proj.name"
             url = projectUrl
             licenses {
                 license {
@@ -104,7 +97,7 @@ ext.addPublication = { SourceSet sourceSet  ->
         it.pom.withXml {
             def rootNode = it.asNode()
             def depsNode = rootNode.appendNode('dependencies')
-            def dependencies = configurations.getByName(sourceSet.implementationConfigurationName).allDependencies
+            def dependencies = proj.configurations.getByName(sourceSet.implementationConfigurationName).allDependencies
             dependencies
                     .findAll { it.group != null && it.name != null }
                     .forEach {
@@ -135,8 +128,8 @@ class SourceSetDependency extends AbstractDependency implements FileCollectionDe
         this.sourceSet = sourceSet
     }
 
-    SourceSetDependency(Project project, String sourceSetName) {
-        this(project, project.sourceSets.getByName(sourceSetName))
+    static def getArtifactId(Project proj, SourceSet sourceSet) {
+        sourceSet.name == 'main' ? proj.name : "$proj.name-$sourceSet.name"
     }
 
     @Override
@@ -161,7 +154,7 @@ class SourceSetDependency extends AbstractDependency implements FileCollectionDe
 
     @Override
     String getName() {
-        return project.getArtifactId(sourceSet)
+        return getArtifactId(project, sourceSet)
     }
 
     @Override
@@ -195,28 +188,23 @@ class SourceSetDependency extends AbstractDependency implements FileCollectionDe
     }
 }
 
-def sourceSetDependency(SourceSet sourceSet) {
-    return new SourceSetDependency(project, sourceSet)
+project.subprojects { Project proj ->
+    proj.ext.sourceSetDependency = { SourceSet srcSet -> new SourceSetDependency(proj, srcSet) }
 }
 
-def sourceSetDependency(String sourceSet) {
-    return new SourceSetDependency(project, sourceSet)
+def publishSourceSets(Project proj) {
+    proj.sourceSets
+            .findAll { it.name != 'test' && it.name != 'generated' }
+            .each { SourceSet srcSet ->
+                def publication = addPublication(proj, srcSet)
+                project.signing.sign publication
+            }
 }
 
-project.ext.sourceSetDependency = this.&sourceSetDependency
-
-project.ext.publishSourceSets = { sourceSets ->
-    sourceSets.findAll { it.name != 'test' && it.name != 'generated' }.each {
-        def publication = project.addPublication(it)
-        project.signing.sign publication
+project.subprojects { Project proj ->
+    if (proj.hasProperty('sourceSets')) {
+        proj.afterEvaluate { publishSourceSets(proj) }
     }
 }
-
-project.afterEvaluate {
-    if (project.hasProperty('sourceSets')) {
-        project.publishSourceSets(project.sourceSets)
-    }
-}
-
 
 task install(type: DefaultTask, dependsOn: publishToMavenLocal)

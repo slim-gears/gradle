@@ -7,7 +7,7 @@ repositories {
 dependencies {
     classpath 'net.ltgt.gradle:gradle-apt-plugin:0.18'
     classpath 'com.adarshr:gradle-test-logger-plugin:1.5.0'
-    //classpath 'com.android.tools.build:gradle:3.2.1'
-    //classpath 'com.slimgears.bintray.gradle:gradle-bintray-plugin:1.8.10'
     classpath 'com.github.node-gradle:gradle-node-plugin:3.0.1'
+    classpath 'io.codearte.gradle.nexus:gradle-nexus-staging-plugin:0.30.0'
+    classpath "io.github.gradle-nexus:publish-plugin:1.1.0"
 }

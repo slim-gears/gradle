@@ -4,8 +4,8 @@ if (!rootProject.hasProperty('scriptsDir')) {
     rootProject.ext.scriptsDir = buildscript.sourceFile.parent
 }
 
-project.group projectGroup
-project.version = System.getenv('TRAVIS_TAG') ?: projectVersion
+project.group project.projectGroup
+project.version = project.projectVersion
 
 if (!rootProject.hasProperty('sourceCompatibility')) {
     project.ext.sourceCompatibility = JavaVersion.VERSION_1_8
