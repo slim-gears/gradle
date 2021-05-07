@@ -1,3 +1,5 @@
+import java.time.Duration
+
 if (project.hasProperty('android')) {
     apply from: "$buildscript.sourceFile.parent/android-maven-publish.gradle"
 } else {
@@ -37,6 +39,10 @@ if (!isSnapshot &&
                 username = sonatypeUser
                 password = sonatypePassword
             }
+        }
+        it.transitionCheckOptions {
+            it.maxRetries.value 120
+            it.delayBetween.value Duration.ofSeconds(10)
         }
     }
 
