@@ -1,6 +1,5 @@
 apply plugin: 'idea'
 apply plugin: 'java'
-apply plugin: 'net.ltgt.apt-idea'
 apply plugin: 'com.adarshr.test-logger'
 
 tasks.withType(JavaCompile) {
