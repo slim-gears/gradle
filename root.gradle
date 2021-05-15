@@ -73,3 +73,14 @@ allprojects {
         maven { url 'https://jitpack.io' }
     }
 }
+
+task copyWrapper(type: Copy) {
+    into "$project.scriptsDir/init"
+    from "$rootProject.projectDir/gradlew"
+    from "$rootProject.projectDir/gradlew.bat"
+}
+
+wrapper {
+    distributionType = Wrapper.DistributionType.ALL
+    finalizedBy project.copyWrapper
+}

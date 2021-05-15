@@ -1,4 +1,11 @@
 #!/bin/bash
 
 basedir=$(dirname "$(echo "$0" | sed -e 's,\\,/,g')")
-cp $basedir/init/* $basedir/..
+
+if [ "$1" == "all" ]; then
+  cp $basedir/init/* $basedir/..
+else
+  cp $basedir/init/gradlew $basedir/..
+  cp $basedir/init/gradlew.bat $basedir/..
+  git update-index --chmod=+x $basedir/../gradlew
+fi
