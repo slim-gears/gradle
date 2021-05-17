@@ -177,3 +177,7 @@ project.afterEvaluate { prj ->
         deleteIfExists("$nodeProjectDir/yarn.cmd")
     }
 }
+
+yarn {
+    it.args.addAll provider {["--network-timeout", "600000"]}
+}
