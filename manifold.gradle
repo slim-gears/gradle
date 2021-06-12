@@ -1,0 +1,24 @@
+configurations {
+    testImplementation.extendsFrom annotationProcessor
+}
+
+dependencies {
+    def manifoldVer = libs.manifoldVer ?: "2021.1.10"
+    def manifold = "systems.manifold:manifold:$manifoldVer"
+    def manifoldRt = "systems.manifold:manifold-rt:$manifoldVer"
+    def manifoldStrings = "systems.manifold:manifold-strings:$manifoldVer"
+    def manifoldExt = "systems.manifold:manifold-ext:$manifoldVer"
+    def manifoldExtRt = "systems.manifold:manifold-ext-rt:$manifoldVer"
+    def manifoldProps = "systems.manifold:manifold-props:$manifoldVer"
+    def manifoldPropsRt = "systems.manifold:manifold-props-rt:$manifoldVer"
+
+    annotationProcessor manifold, manifoldStrings, manifoldExt, manifoldProps
+    testAnnotationProcessor manifold, manifoldStrings, manifoldExt, manifoldProps
+    implementation manifoldRt, manifoldExtRt, manifoldPropsRt
+    testImplementation manifoldRt, manifoldExtRt, manifoldPropsRt
+}
+
+tasks.withType(JavaCompile) {
+    options.compilerArgs += ['-Xplugin:Manifold']
+    options.fork = true
+}

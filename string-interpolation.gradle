@@ -1,0 +1,9 @@
+dependencies {
+    def betterStringsVer = libs.betterStringsVer ?: "0.4"
+    def betterStrings = "com.antkorwin:better-strings:$betterStringsVer"
+
+    compileOnly betterStrings
+    annotationProcessor betterStrings
+    testCompileOnly betterStrings
+    testAnnotationProcessor betterStrings
+}
