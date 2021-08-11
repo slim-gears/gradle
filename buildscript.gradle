@@ -8,5 +8,4 @@ dependencies {
     classpath 'com.adarshr:gradle-test-logger-plugin:1.5.0'
     classpath 'com.github.node-gradle:gradle-node-plugin:3.0.1'
     classpath "io.github.gradle-nexus:publish-plugin:1.1.0"
-    classpath "io.freefair.gradle:lombok-plugin:6.0.0-m2"
 }

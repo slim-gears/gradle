@@ -1,0 +1,8 @@
+project.afterEvaluate {
+    def lombokVer = libs.lombokVer ?: '1.18.20'
+    String lombokDep = "org.projectlombok:lombok:$lombokVer"
+    project.sourceSets.each { s ->
+        project.dependencies.add s.compileOnlyConfigurationName, lombokDep
+        project.dependencies.add s.annotationProcessorConfigurationName, lombokDep
+    }
+}

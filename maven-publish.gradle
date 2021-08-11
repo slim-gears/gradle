@@ -97,6 +97,7 @@ def addPublication(Project proj, SourceSet sourceSet) {
         it.pom.withXml {
             def rootNode = it.asNode()
             def depsNode = rootNode.appendNode('dependencies')
+            Configuration confg
             def dependencies = proj.configurations.getByName(sourceSet.implementationConfigurationName).allDependencies
             dependencies
                     .findAll { it.group != null && it.name != null }
