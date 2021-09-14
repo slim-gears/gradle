@@ -37,6 +37,10 @@ project.afterEvaluate {
         testImplementation.extendsFrom(bundledImplementation)
     }
 
+    dependencies {
+        testImplementation libs.mockito, libs.junit
+    }
+
     configurations.each { configuration ->
         def prjDeps = configuration.dependencies
                 .findAll { it instanceof ProjectDependency }
