@@ -87,17 +87,16 @@ project.afterEvaluate({ prj ->
     def nodeRelativePath = baseDir.toPath().relativize(nodeDir.toPath())
     def canonicRelativePath = nodeRelativePath.toString().replace('\\', '/')
     def prjDirRelativeToNode = baseDir.toPath().relativize(project.projectDir.toPath())
-    def prjDirRelativeToNodeCanonic = prjDirRelativeToNode.toString().replace('\\', '/')
 
-    task createNgWrapperScripts(type: DefaultTask, dependsOn: nodeSetup) {
+    task createNgWrapperScripts(type: DefaultTask, dependsOn: nodeSetup, group: 'scripts') {
         outputs.files("$baseDir/ng", "$baseDir/ng.cmd")
         doLast {
 
             createScript("$baseDir/ng",
                     """#!/bin/sh
-PATH=\$PATH:\$basedir/$canonicRelativePath
 basedir=\$(dirname "\$(echo "\$0" | sed -e 's,\\\\,/,g')")
-\$basedir/$canonicRelativePath/node "\$basedir/node_modules/@angular/cli/bin/ng" \$*
+PATH=\$PATH:\$basedir/$canonicRelativePath:\$basedir/$canonicRelativePath/bin
+node "\$basedir/node_modules/@angular/cli/bin/ng" \$*
 """)
 
             createScript("$baseDir/ng.cmd",
@@ -108,14 +107,14 @@ basedir=\$(dirname "\$(echo "\$0" | sed -e 's,\\\\,/,g')")
         }
     }
 
-    task createNpmWrapperScripts(type: DefaultTask, dependsOn: npmSetup) {
+    task createNpmWrapperScripts(type: DefaultTask, dependsOn: npmSetup, , group: 'scripts') {
         outputs.files("$baseDir/npm", "$baseDir/npm.cmd")
         doLast {
             createScript("$baseDir/npm",
                     """#!/bin/sh
 basedir=\$(PWD)/\$(dirname "\$(echo "\$0" | sed -e 's,\\\\,/,g')")
-PATH=\$PATH:\$basedir/$canonicRelativePath
-\$basedir/$canonicRelativePath/node "\$basedir/$canonicRelativePath/node_modules/npm/bin/npm-cli.js" \$* --scripts-prepend-node-path=auto
+PATH=\$PATH:\$basedir/$canonicRelativePath:\$basedir/$canonicRelativePath/bin
+node "\$basedir/$canonicRelativePath/node_modules/npm/bin/npm-cli.js" \$* --scripts-prepend-node-path=auto
 """)
             createScript("$baseDir/npm.cmd",
                     """@set PATH=%PATH%;%~dp0$nodeRelativePath
@@ -124,14 +123,15 @@ PATH=\$PATH:\$basedir/$canonicRelativePath
         }
     }
 
-    task createYarnWrapperScripts(type: DefaultTask, dependsOn: yarnSetup) {
+    task createYarnWrapperScripts(type: DefaultTask, dependsOn: yarnSetup, group: 'scripts') {
         outputs.files("$baseDir/yarn", "$baseDir/yarn.cmd")
         doLast {
+            def yarnBinPath = project.file(".gradle/yarn/yarn-latest/bin").exists() ? "bin/yarn" : "yarn"
             createScript("$baseDir/yarn",
                     """#!/bin/sh
-basedir=\$(PWD)/\$(dirname "\$(echo "\$0" | sed -e 's,\\\\,/,g')")/$prjDirRelativeToNodeCanonic
-PATH=\$PATH:\$basedir/.gradle/yarn/yarn-latest:\$basedir/$canonicRelativePath
-\$basedir/.gradle/yarn/yarn-latest/yarn \$*
+basedir=\$(pwd)/\$(dirname "\$(echo \$0 | sed -e 's,\\\\,/,g')")
+PATH=\$PATH:\$basedir/.gradle/yarn/yarn-latest:\$basedir/$canonicRelativePath:\$basedir/$canonicRelativePath/bin
+\$basedir/.gradle/yarn/yarn-latest/$yarnBinPath \$*
 """)
             createScript("$baseDir/yarn.cmd",
                     """@set PATH=%PATH%;%~dp0${prjDirRelativeToNode}\\.gradle\\yarn\\yarn-latest;%~dp0$nodeRelativePath
