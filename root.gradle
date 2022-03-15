@@ -8,7 +8,7 @@ project.group project.projectGroup
 project.version = project.projectVersion
 
 if (!rootProject.hasProperty('sourceCompatibility')) {
-    project.ext.sourceCompatibility = JavaVersion.VERSION_1_8
+    project.ext.sourceCompatibility = JavaVersion.VERSION_11
 }
 
 static def loadProperties(Project prj, File file) {
